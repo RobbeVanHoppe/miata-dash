@@ -1,0 +1,25 @@
+name: Python Tests
+
+on:
+  push:
+    branches: [ rpi ]
+    paths:
+      - 'rpi/**'
+  pull_request:
+    branches: [ rpi ]
+    paths:
+      - 'rpi/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t miata-dash ./rpi
+
+      - name: Run tests
+        run: docker run miata-dash pytest

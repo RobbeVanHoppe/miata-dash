@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Miata Dash</title>
+    <style>
+        body { background: #111; color: #eee; font-family: monospace; padding: 2rem; }
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+        .card { background: #222; border-radius: 8px; padding: 1rem; }
+        .label { font-size: 0.75rem; color: #888; }
+        .value { font-size: 2rem; font-weight: bold; }
+        .on { color: #4caf50; }
+        .off { color: #555; }
+    </style>
+</head>
+<body>
+<h2>🚗 Miata Dash</h2>
+<div class="grid">
+    <div class="card">
+        <div class="label">RPM</div>
+        <div class="value" id="rpm">—</div>
+    </div>
+    <div class="card">
+        <div class="label">Water Temp (°C)</div>
+        <div class="value" id="water_temp_c">—</div>
+    </div>
+    <div class="card">
+        <div class="label">Oil Pressure (bar)</div>
+        <div class="value" id="oil_pressure">—</div>
+    </div>
+    <div class="card">
+        <div class="label">Lights</div>
+        <div class="value" id="lights_on">—</div>
+    </div>
+    <div class="card">
+        <div class="label">GPS</div>
+        <div class="value" id="gps">—</div>
+    </div>
+    <div class="card">
+        <div class="label">G-Force (X / Y)</div>
+        <div class="value" id="imu">—</div>
+    </div>
+</div>
+
+<script>
+    async function poll() {
+        try {
+            const res = await fetch('/api/state');
+            const s = await res.json();
+
+            document.getElementById('rpm').textContent = s.rpm;
+            document.getElementById('water_temp_c').textContent = s.water_temp_c + ' °C';
+            document.getElementById('oil_pressure').textContent = s.oil_pressure.toFixed(1) + ' bar';
+            document.getElementById('lights_on').className = 'value ' + (s.lights_on ? 'on' : 'off');
+            document.getElementById('lights_on').textContent = s.lights_on ? 'ON' : 'OFF';
+            document.getElementById('gps').textContent = s.gps_valid
+                ? `${s.gps_lat.toFixed(4)}, ${s.gps_lon.toFixed(4)}`
+                : 'NO FIX';
+            document.getElementById('imu').textContent = `${s.imu_x.toFixed(2)} / ${s.imu_y.toFixed(2)}`;
+        } catch (e) {
+            console.error('Poll failed:', e);
+        }
+    }
+
+    setInterval(poll, 100);
+    poll();
+</script>
+</body>
+</html>

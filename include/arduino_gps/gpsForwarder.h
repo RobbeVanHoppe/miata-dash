@@ -16,7 +16,7 @@ public:
     void update();
 
 private:
-    void onI2CRequest();
+    void onI2CRequest() override;
     void readHardwareSerial();
 
     TinyGPSPlus gps_;
