@@ -33,6 +33,7 @@ public:
     void handleI2CReceive(int len);
 
 private:
+
     const uint8_t optoPins[4] = {OptoLightPin, OptoBeamPin, OptoTachoPin, OptoBrakePin};
     const uint8_t relayPins[4] = {RelayBeamPin, RelayLightsPin, RelayRetractorPin, RelayUNDEFINEDPin};
 

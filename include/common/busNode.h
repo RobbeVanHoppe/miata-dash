@@ -44,7 +44,7 @@ protected:
         Wire.endTransmission();
     }
 
-    void onI2CRequest() {
+    virtual void onI2CRequest() {
         Wire.write((uint8_t*)&readyMsg, sizeof(Message));
     }
 };

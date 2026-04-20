@@ -17,8 +17,6 @@ public:
 
 
 private:
+    void onI2CRequest() override;
     MPU9250_WE imu = MPU9250_WE(0x68);
-
-    // Internal "Clever Math" for the Node level
-    void packData();
 };
