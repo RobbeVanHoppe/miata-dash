@@ -7,6 +7,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-CMD ["python", "src/main.py"]
+CMD ["python", "-m", "src.main"]
+
+EXPOSE 5000
 
 # To run tests: docker run miata-dash pytest
