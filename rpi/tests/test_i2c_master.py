@@ -68,9 +68,15 @@ class TestI2CMasterPolling:
 
 class TestFlaskIntegration:
 
-    def test_api_state_returns_json(self, state):
+    @pytest.fixture
+    def commander(self):
+        from src.bus.i2c_commander import I2CCommander
+        from src.bus.mock_i2c import MockBus
+        return I2CCommander(bus=MockBus())
+
+    def test_api_state_returns_json(self, state, commander):
         from src.web.app import app, init_app
-        init_app(state)
+        init_app(state, commander)
         client = app.test_client()
         response = client.get("/api/state")
         assert response.status_code == 200
@@ -79,9 +85,9 @@ class TestFlaskIntegration:
         assert "gps_valid" in data
         assert "imu_x" in data
 
-    def test_api_state_reflects_updates(self, state):
+    def test_api_state_reflects_updates(self, state, commander):
         from src.web.app import app, init_app
-        init_app(state)
+        init_app(state, commander)
         state.update(rpm=7000, water_temp_c=102)
         client = app.test_client()
         response = client.get("/api/state")
@@ -89,9 +95,9 @@ class TestFlaskIntegration:
         assert data["rpm"] == 7000
         assert data["water_temp_c"] == 102
 
-    def test_dashboard_returns_html(self, state):
+    def test_dashboard_returns_html(self, state, commander):
         from src.web.app import app, init_app
-        init_app(state)
+        init_app(state, commander)
         client = app.test_client()
         response = client.get("/")
         assert response.status_code == 200
