@@ -1,7 +1,7 @@
 #include "arduino_sensors/sensorForwarder.h"
 #include "common/carState.h"
 
-#define WAT_T_RESISTOR_VALUE 180.63
+#define WAT_T_RESISTOR_VALUE 330.00
 #define OIL_P_RESISTOR_VALUE 180.52
 
 static SensorForwarder* instance = nullptr;
@@ -19,15 +19,16 @@ int readWaterTemp() {
     if (raw < 10 || raw > 1010) return 0;
 
     float voltage = raw * (5.0 / 1023.0);
-    float rSensor = (voltage * WAT_T_RESISTOR_VALUE) / (5.0 - voltage);
+    float rSensor = (WAT_T_RESISTOR_VALUE * voltage) / (5.0 - voltage);
 
-    // Steinhart-Hart for Mazda B6/BP coolant sensor
-    float temperature;
-    temperature = log(rSensor);
-    temperature = 1 / (0.001129148 + (0.000234125 * temperature) + (0.0000000876741 * temperature * temperature * temperature));
-    temperature = temperature - 273.15;
+    // Steinhart-Hart coefficients derived from Mazda B6 coolant sensor
+    // Source: 1990 MX-5 Workshop Manual p.F-136
+    // Anchor points: -20°C=16200Ω, 20°C=2450Ω, 80°C=320Ω
+    float lnR = log(rSensor);
+    float tempK = 1.0 / (0.0011934494 + (0.0002837733 * lnR) + (0.000000006840434 * lnR * lnR * lnR));
 
-    return (int)temperature;
+    if (tempK < 233.15 || tempK > 393.15) return 0;
+    else return (int)(tempK - 273.15);
 }
 
 float readOilPressure() {
