@@ -1,10 +1,10 @@
-from car_state import SharedState
-from bus.i2c_master import I2CMaster
-from bus.message import MessageNode
-from handlers.sensor_handler import SensorHandler
-from handlers.gps_handler import GpsHandler
-from handlers.imu_handler import ImuHandler
-from web.app import app, init_app
+from src.car_state import SharedState
+from src.bus.i2c_master import I2CMaster
+from src.bus.message import MessageNode
+from src.handlers.sensor_handler import SensorHandler
+from src.handlers.gps_handler import GpsHandler
+from src.handlers.imu_handler import ImuHandler
+from src.web.app import app, init_app
 
 
 def main():

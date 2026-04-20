@@ -1,6 +1,6 @@
-from rpi.src.bus.message import Message, MessageType
-from rpi.src.handlers.base_handler import BaseHandler
-from rpi.src.car_state import SharedState
+from src.bus.message import Message, MessageType
+from src.handlers.base_handler import BaseHandler
+from src.car_state import SharedState
 
 
 class GpsHandler(BaseHandler):

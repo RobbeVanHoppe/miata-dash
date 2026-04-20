@@ -1,5 +1,5 @@
-from rpi.src.bus.message import Message
-from rpi.src.car_state import SharedState
+from src.bus.message import Message
+from src.car_state import SharedState
 
 
 class BaseHandler:

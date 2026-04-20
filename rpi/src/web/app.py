@@ -1,5 +1,5 @@
 from flask import Flask, jsonify, render_template
-from rpi.src.car_state import SharedState
+from src.car_state import SharedState
 
 app = Flask(__name__)
 _state: SharedState = None

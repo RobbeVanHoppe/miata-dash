@@ -2,9 +2,9 @@ import time
 import threading
 from typing import Dict
 
-from message import Message, MESSAGE_SIZE, MessageNode
-from rpi.src.handlers.base_handler import BaseHandler
-from rpi.src.car_state import SharedState
+from src.bus.message import Message, MESSAGE_SIZE, MessageNode
+from src.handlers.base_handler import BaseHandler
+from src.car_state import SharedState
 
 # Node I2C addresses - mirrors nodeToAddress() in C++
 NODE_ADDRESSES: Dict[MessageNode, int] = {
