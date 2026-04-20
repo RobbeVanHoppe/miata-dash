@@ -2,68 +2,714 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Miata Dash</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
-        body { background: #111; color: #eee; font-family: monospace; padding: 2rem; }
-        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
-        .card { background: #222; border-radius: 8px; padding: 1rem; }
-        .label { font-size: 0.75rem; color: #888; }
-        .value { font-size: 2rem; font-weight: bold; }
-        .on { color: #4caf50; }
-        .off { color: #555; }
+        :root {
+            --bg:        #0e0b1a;
+            --bg2:       #130f23;
+            --card:      rgba(255,255,255,0.055);
+            --card-b:    rgba(255,255,255,0.08);
+            --accent:    #a855f7;
+            --accent2:   #7c3aed;
+            --accent-g:  linear-gradient(135deg,#a855f7,#7c3aed);
+            --teal:      #2dd4bf;
+            --amber:     #f59e0b;
+            --red:       #f43f5e;
+            --green:     #4ade80;
+            --text:      #f1eeff;
+            --text2:     rgba(241,238,255,0.55);
+            --text3:     rgba(241,238,255,0.28);
+            --radius:    18px;
+            --radius-sm: 12px;
+        }
+
+        * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+        html,body {
+            width:100%; height:100%;
+            background: var(--bg);
+            font-family: 'DM Sans', sans-serif;
+            color: var(--text);
+            overflow: hidden;
+        }
+
+        body::before {
+            content:'';
+            position:fixed; inset:0; pointer-events:none; z-index:0;
+            background:
+                    radial-gradient(ellipse 55% 45% at 15% 20%, rgba(124,58,237,0.18) 0%, transparent 70%),
+                    radial-gradient(ellipse 40% 35% at 85% 75%, rgba(168,85,247,0.12) 0%, transparent 70%),
+                    radial-gradient(ellipse 30% 30% at 60% 10%, rgba(45,212,191,0.06) 0%, transparent 70%);
+        }
+
+        #app {
+            position:relative; z-index:1;
+            display:flex; flex-direction:column;
+            width:100vw; height:100vh;
+        }
+
+        /* ── Top bar ── */
+        #topbar {
+            padding: 12px 20px 0;
+            display:flex; align-items:center; justify-content:space-between;
+            flex-shrink:0;
+        }
+        .tb-title {
+            font-size:18px; font-weight:600; letter-spacing:-.02em;
+            background: linear-gradient(90deg, var(--text) 0%, rgba(168,85,247,0.85) 100%);
+            -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+        }
+        .tb-sub { font-size:10px; color:var(--text3); letter-spacing:.04em; margin-top:1px; }
+        .tb-right { display:flex; align-items:center; gap:8px; }
+        .tb-chip {
+            display:flex; align-items:center; gap:5px;
+            background: var(--card);
+            border: 1px solid var(--card-b);
+            border-radius:999px;
+            padding: 5px 11px;
+            font-size:11px; color:var(--text2);
+            backdrop-filter:blur(12px);
+        }
+        .dot {
+            width:6px; height:6px; border-radius:50%;
+            background:var(--green); box-shadow:0 0 5px var(--green);
+        }
+        .dot.err { background:var(--red); box-shadow:0 0 5px var(--red); }
+        .dot.warn { background:var(--amber); box-shadow:0 0 5px var(--amber); }
+        #clock {
+            font-family:'DM Mono',monospace; font-size:12px; color:var(--text2);
+            background:var(--card); border:1px solid var(--card-b);
+            border-radius:999px; padding:5px 13px; backdrop-filter:blur(12px);
+        }
+
+        /* ── Nav ── */
+        #navtabs {
+            padding: 10px 20px 0;
+            display:flex; gap:5px; flex-shrink:0;
+        }
+        .tab {
+            padding: 7px 16px; border-radius:999px;
+            font-size:12px; font-weight:500;
+            border:none; cursor:pointer; transition:all .2s;
+            color:var(--text3); background:transparent;
+        }
+        .tab:hover { color:var(--text2); background:var(--card); }
+        .tab.active {
+            background:var(--accent-g); color:#fff;
+            box-shadow:0 4px 14px rgba(168,85,247,0.35);
+        }
+
+        /* ── Content ── */
+        #content {
+            flex:1; overflow:hidden;
+            padding: 10px 20px 14px;
+        }
+        .page { display:none; height:100%; }
+        .page.active { display:grid; }
+
+        /* ── Card ── */
+        .card {
+            background:var(--card);
+            border:1px solid var(--card-b);
+            border-radius:var(--radius);
+            backdrop-filter:blur(16px);
+            -webkit-backdrop-filter:blur(16px);
+            overflow:hidden; position:relative;
+            transition:border-color .2s;
+            animation:fadeUp .3s cubic-bezier(.4,0,.2,1) both;
+        }
+        .card:nth-child(2){animation-delay:.04s}
+        .card:nth-child(3){animation-delay:.08s}
+        .card:nth-child(4){animation-delay:.12s}
+        .card:nth-child(5){animation-delay:.16s}
+        .card:nth-child(6){animation-delay:.20s}
+        .card:hover { border-color:rgba(168,85,247,0.22); }
+        @keyframes fadeUp {
+            from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)}
+        }
+        .card-accent { background:var(--accent-g); border:none; }
+
+        .cp { padding:14px; }
+        .lbl { font-size:10px; font-weight:500; letter-spacing:.06em; color:var(--text3); text-transform:uppercase; margin-bottom:3px; }
+        .val { font-family:'DM Mono',monospace; font-size:30px; line-height:1; color:var(--text); letter-spacing:-.02em; }
+        .val.lg { font-size:40px; }
+        .val.xl { font-size:56px; }
+        .val.sm { font-size:20px; }
+        .unit { font-size:10px; color:var(--text3); margin-top:2px; }
+
+        /* ── Pills ── */
+        .pill {
+            display:inline-flex; align-items:center; gap:4px;
+            padding:3px 9px; border-radius:999px; font-size:10px; font-weight:500;
+            border:1px solid transparent;
+        }
+        .pill .pd { width:5px; height:5px; border-radius:50%; background:currentColor; }
+        .pill.on  { background:rgba(74,222,128,.1); border-color:rgba(74,222,128,.3); color:var(--green); }
+        .pill.off { background:rgba(255,255,255,.05); border-color:rgba(255,255,255,.08); color:var(--text3); }
+        .pill.warn{ background:rgba(245,158,11,.1); border-color:rgba(245,158,11,.3); color:var(--amber); }
+        .pill.err { background:rgba(244,63,94,.1); border-color:rgba(244,63,94,.3); color:var(--red); animation:blink .8s infinite; }
+        @keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+
+        /* ── Progress bar ── */
+        .bar-track { height:4px; border-radius:999px; background:rgba(255,255,255,.07); overflow:hidden; margin-top:8px; }
+        .bar-fill { height:100%; border-radius:999px; transition:width .3s ease; }
+        .bar-fill.purple { background:var(--accent-g); box-shadow:0 0 8px rgba(168,85,247,.5); }
+        .bar-fill.green  { background:linear-gradient(90deg,#4ade80,#22d3ee); box-shadow:0 0 8px rgba(74,222,128,.4); }
+        .bar-fill.amber  { background:linear-gradient(90deg,#f59e0b,#ef4444); box-shadow:0 0 8px rgba(245,158,11,.4); }
+
+        /* ── Control button ── */
+        .cb {
+            background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.09);
+            border-radius:var(--radius-sm); color:var(--text2);
+            font-family:'DM Sans',sans-serif; font-size:12px; font-weight:500;
+            padding:11px 10px; cursor:pointer; transition:all .15s; text-align:left;
+            display:flex; flex-direction:column; gap:3px;
+        }
+        .cb .ci { font-size:17px; }
+        .cb:hover { background:rgba(168,85,247,.12); border-color:rgba(168,85,247,.35); color:var(--text); }
+        .cb:active { transform:scale(.97); }
+        .cb.danger:hover { background:rgba(244,63,94,.1); border-color:rgba(244,63,94,.35); color:var(--red); }
+
+        /* ── G-bar horizontal ── */
+        .gbar { height:5px; border-radius:999px; background:rgba(255,255,255,.07); position:relative; overflow:hidden; margin-top:7px; }
+        .gbar-fill { position:absolute; top:0; height:100%; border-radius:999px; background:var(--accent-g); transition:left .1s,width .1s; }
+        .gbar-zero { position:absolute; top:-2px; left:50%; width:1px; height:9px; background:rgba(255,255,255,.18); }
+
+        /* ── Compass ── */
+        .compass {
+            width:88px; height:88px; border-radius:50%;
+            border:2px solid rgba(168,85,247,.2);
+            position:relative; display:flex; align-items:center; justify-content:center;
+            background:radial-gradient(circle, rgba(168,85,247,.06) 0%, transparent 70%);
+            flex-shrink:0;
+        }
+        .compass::before{content:'N';position:absolute;top:5px;left:50%;transform:translateX(-50%);font-size:9px;color:var(--accent);font-weight:600;}
+        .cn{position:absolute;width:2px;height:36px;bottom:50%;left:50%;transform-origin:bottom center;margin-left:-1px;
+            background:linear-gradient(0deg,transparent,var(--accent));border-radius:2px;
+            box-shadow:0 -2px 8px rgba(168,85,247,.5);transition:transform .5s ease;}
+
+        /* ── Divider ── */
+        .div { height:1px; background:rgba(255,255,255,.06); margin:8px 0; }
+
+        /* ── EFI row ── */
+        .er { display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px solid rgba(255,255,255,.05); }
+        .er:last-child{ border-bottom:none; }
+        .ek { font-size:11px; color:var(--text3); }
+        .ev { font-family:'DM Mono',monospace; font-size:12px; color:var(--text2); }
+
+        /* ── SDR ── */
+        .sdr-freq { font-family:'DM Mono',monospace; font-size:28px; color:var(--teal); text-shadow:0 0 18px rgba(45,212,191,.4); letter-spacing:.04em; }
+        .sdb { flex:1; padding:7px 4px; border:1px solid rgba(45,212,191,.2); border-radius:var(--radius-sm);
+            background:rgba(45,212,191,.04); color:rgba(45,212,191,.6); font-family:'DM Sans',sans-serif;
+            font-size:10px; font-weight:500; cursor:pointer; transition:all .15s; }
+        .sdb:hover { background:rgba(45,212,191,.12); color:var(--teal); border-color:var(--teal); }
+
+        /* ── Speed big ── */
+        .speed-xl {
+            font-family:'DM Mono',monospace; font-size:60px; font-weight:400; line-height:1; letter-spacing:-.03em;
+            background:var(--accent-g); -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+        }
+
+        /* ── Grid layouts ── */
+        #page-sensors {
+            grid-template-columns: 1.1fr .75fr .75fr;
+            grid-template-rows: 1fr 1fr;
+            gap:9px;
+        }
+        #page-lights {
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto 1fr;
+            gap:9px;
+        }
+        #page-efi {
+            grid-template-columns: 1.2fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap:9px;
+        }
+        #page-gps {
+            grid-template-columns: 1.2fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap:9px;
+        }
+        #page-imu {
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: auto 1fr auto;
+            gap:9px;
+        }
+        #page-sdr {
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto 1fr auto;
+            gap:9px;
+        }
+        .s2c{grid-column:span 2} .s3c{grid-column:span 3} .s2r{grid-row:span 2}
+        #cmdlog{ font-size:10px; color:var(--text3); font-family:'DM Mono',monospace; margin-top:5px; min-height:13px; }
     </style>
 </head>
 <body>
-<h2>🚗 Miata Dash</h2>
-<div class="grid">
-    <div class="card">
-        <div class="label">RPM</div>
-        <div class="value" id="rpm">—</div>
+<div id="app">
+
+    <div id="topbar">
+        <div>
+            <div class="tb-title">Miata Dash</div>
+            <div class="tb-sub">NA · 1990 · B6ZE 1.6L</div>
+        </div>
+        <div class="tb-right">
+            <div class="tb-chip"><div class="dot" id="connDot"></div><span id="connLbl">Online</span></div>
+            <div class="tb-chip"><div class="dot err" id="gpsDot"></div><span id="gpsLbl">No Fix</span></div>
+            <div id="clock">--:--</div>
+        </div>
     </div>
-    <div class="card">
-        <div class="label">Water Temp (°C)</div>
-        <div class="value" id="water_temp_c">—</div>
+
+    <div id="navtabs">
+        <button class="tab active" onclick="sp('sensors',this)">Sensors</button>
+        <button class="tab" onclick="sp('lights',this)">Lights</button>
+        <button class="tab" onclick="sp('efi',this)">EFI</button>
+        <button class="tab" onclick="sp('gps',this)">GPS</button>
+        <button class="tab" onclick="sp('imu',this)">IMU</button>
+        <button class="tab" onclick="sp('sdr',this)">SDR</button>
     </div>
-    <div class="card">
-        <div class="label">Oil Pressure (bar)</div>
-        <div class="value" id="oil_pressure">—</div>
-    </div>
-    <div class="card">
-        <div class="label">Lights</div>
-        <div class="value" id="lights_on">—</div>
-    </div>
-    <div class="card">
-        <div class="label">GPS</div>
-        <div class="value" id="gps">—</div>
-    </div>
-    <div class="card">
-        <div class="label">G-Force (X / Y)</div>
-        <div class="value" id="imu">—</div>
+
+    <div id="content">
+
+        <!-- SENSORS -->
+        <div class="page active" id="page-sensors">
+
+            <!-- RPM big -->
+            <div class="card s2r cp" style="display:flex;flex-direction:column;justify-content:space-between;">
+                <div>
+                    <div class="lbl">Engine Speed</div>
+                    <div class="val xl" id="rpm-big">0</div>
+                    <div class="unit">RPM</div>
+                </div>
+                <div>
+                    <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+                        <span style="font-size:9px;color:var(--text3)">IDLE</span>
+                        <span style="font-size:9px;color:var(--text3)">REDLINE 8k</span>
+                    </div>
+                    <div class="bar-track" style="height:7px"><div class="bar-fill purple" id="rpmBar" style="width:0%"></div></div>
+                    <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px;">
+                        <div class="pill off" id="pl-lights"><div class="pd"></div><span id="pl-lights-t">Lights Off</span></div>
+                        <div class="pill off" id="pl-beam"><div class="pd"></div><span id="pl-beam-t">Beam Off</span></div>
+                        <div class="pill off" id="pl-up"><div class="pd"></div><span id="pl-up-t">Lights Down</span></div>
+                        <div class="pill off" id="pl-brake"><div class="pd"></div><span id="pl-brake-t">Brake Off</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Water -->
+            <div class="card cp">
+                <div class="lbl">Coolant Temp</div>
+                <div class="val" id="water-val">--</div>
+                <div class="unit">°C</div>
+                <div class="bar-track"><div class="bar-fill green" id="waterBar" style="width:0%"></div></div>
+                <div style="margin-top:8px"><div class="pill on" id="water-pill"><div class="pd"></div><span id="water-pill-t">Normal</span></div></div>
+            </div>
+
+            <!-- Oil -->
+            <div class="card cp">
+                <div class="lbl">Oil Pressure</div>
+                <div class="val" id="oil-val">--</div>
+                <div class="unit">bar</div>
+                <div class="bar-track"><div class="bar-fill green" id="oilBar" style="width:0%"></div></div>
+                <div style="margin-top:8px"><div class="pill on" id="oil-pill"><div class="pd"></div><span id="oil-pill-t">Good</span></div></div>
+            </div>
+
+            <!-- G-Force -->
+            <div class="card cp">
+                <div class="lbl">G-Force</div>
+                <div style="display:flex;gap:10px;margin-top:3px">
+                    <div><div style="font-size:8px;color:var(--text3)">LONG</div><div class="val sm" id="s-gx">0.00</div></div>
+                    <div><div style="font-size:8px;color:var(--text3)">LAT</div><div class="val sm" id="s-gy">0.00</div></div>
+                    <div><div style="font-size:8px;color:var(--text3)">VERT</div><div class="val sm" id="s-gz">0.00</div></div>
+                </div>
+                <div class="gbar" style="margin-top:9px"><div class="gbar-zero"></div><div class="gbar-fill" id="gBarLat" style="left:50%;width:0%"></div></div>
+                <div style="display:flex;justify-content:space-between;margin-top:2px"><span style="font-size:8px;color:var(--text3)">−3G</span><span style="font-size:8px;color:var(--text3)">+3G</span></div>
+            </div>
+
+            <!-- GPS mini -->
+            <div class="card cp">
+                <div class="lbl">Position</div>
+                <div style="font-family:DM Mono,monospace;font-size:13px;color:var(--text);margin-top:3px" id="s-lat">--</div>
+                <div style="font-family:DM Mono,monospace;font-size:13px;color:var(--text)" id="s-lon">--</div>
+                <div class="div"></div>
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                    <div><div style="font-size:8px;color:var(--text3)">SPEED</div><div style="font-family:DM Mono,monospace;font-size:15px" id="s-spd">--</div></div>
+                    <div class="pill off" id="s-fix"><div class="pd"></div><span id="s-fix-t">No Fix</span></div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- LIGHTS -->
+        <div class="page" id="page-lights">
+
+            <div class="card cp s2c">
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                    <div><div class="lbl">Lighting Control</div><div style="font-size:13px;font-weight:500;margin-top:1px">Relay Module · 6-channel</div></div>
+                    <div style="display:flex;gap:6px">
+                        <div class="pill off" id="lc-l"><div class="pd"></div><span id="lc-l-t">Off</span></div>
+                        <div class="pill off" id="lc-b"><div class="pd"></div><span id="lc-b-t">Beam Off</span></div>
+                        <div class="pill off" id="lc-u"><div class="pd"></div><span id="lc-u-t">Down</span></div>
+                    </div>
+                </div>
+                <div id="cmdlog">Awaiting command…</div>
+            </div>
+
+            <div class="card cp" style="grid-row:2/4">
+                <div class="lbl" style="margin-bottom:9px">Headlights</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px">
+                    <button class="cb" onclick="sendCmd('LIGHTS_ON')"><span class="ci">💡</span>Lights On</button>
+                    <button class="cb danger" onclick="sendCmd('LIGHTS_OFF')"><span class="ci">🌑</span>Lights Off</button>
+                    <button class="cb" onclick="sendCmd('BEAM_ON')"><span class="ci">🔦</span>High Beam On</button>
+                    <button class="cb danger" onclick="sendCmd('BEAM_OFF')"><span class="ci">🔅</span>High Beam Off</button>
+                    <button class="cb" onclick="sendCmd('RETRACT_UP')"><span class="ci">▲</span>Pop-ups Up</button>
+                    <button class="cb" onclick="sendCmd('RETRACT_DOWN')"><span class="ci">▼</span>Pop-ups Down</button>
+                </div>
+            </div>
+
+            <div class="card cp">
+                <div class="lbl" style="margin-bottom:9px">Accessories</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px">
+                    <button class="cb" onclick="sendCmd('INTERIOR_ON')"><span class="ci">🏠</span>Interior On</button>
+                    <button class="cb danger" onclick="sendCmd('INTERIOR_OFF')"><span class="ci">🌙</span>Interior Off</button>
+                    <button class="cb" onclick="sendCmd('ACC_ON')"><span class="ci">⚡</span>ACC Bus On</button>
+                    <button class="cb danger" onclick="sendCmd('ACC_OFF')"><span class="ci">⭕</span>ACC Bus Off</button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- EFI -->
+        <div class="page" id="page-efi">
+
+            <div class="card s2r cp">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                    <div><div class="lbl">rusEFI ECU</div><div style="font-size:13px;font-weight:500">Serial / TunerStudio</div></div>
+                    <div class="pill err" id="ecuPill"><div class="pd"></div><span id="ecuPill-t">Disconnected</span></div>
+                </div>
+                <div class="div"></div>
+                <div class="er"><span class="ek">RPM</span><span class="ev" id="ef-rpm">--</span></div>
+                <div class="er"><span class="ek">AFR Target / Actual</span><span class="ev" id="ef-afr">-- / --</span></div>
+                <div class="er"><span class="ek">Ignition Advance</span><span class="ev" id="ef-ign">--°</span></div>
+                <div class="er"><span class="ek">MAP / TPS</span><span class="ev" id="ef-map">-- kPa / --%</span></div>
+                <div class="er"><span class="ek">CLT / IAT</span><span class="ev" id="ef-clt">-- / --°C</span></div>
+                <div class="er"><span class="ek">Battery Voltage</span><span class="ev" id="ef-vbat">--V</span></div>
+                <div class="er"><span class="ek">Injection Mode</span><span class="ev" id="ef-mode">--</span></div>
+            </div>
+
+            <div class="card cp">
+                <div class="lbl" style="margin-bottom:10px">Connection</div>
+                <div style="display:flex;flex-direction:column;gap:7px">
+                    <button class="cb" onclick="connectEFI()" style="width:100%">⚙  Connect ECU</button>
+                    <button class="cb danger" style="width:100%">✕  Disconnect</button>
+                </div>
+                <div class="div"></div>
+                <div style="font-size:10px;color:var(--text3);line-height:2">Port: /dev/ttyUSB0<br>Baud: 115200<br>Protocol: TS Binary v2</div>
+            </div>
+
+            <div class="card-accent card cp" style="display:flex;flex-direction:column;justify-content:center">
+                <div class="lbl" style="color:rgba(255,255,255,.6)">Fuel System</div>
+                <div style="font-family:DM Mono,monospace;font-size:22px;color:#fff;margin-top:4px">Sequential</div>
+                <div style="font-size:10px;color:rgba(255,255,255,.5);margin-top:2px">4-cylinder · MPFI</div>
+            </div>
+
+        </div>
+
+        <!-- GPS -->
+        <div class="page" id="page-gps">
+
+            <div class="card s2r cp" style="display:flex;flex-direction:column;justify-content:space-between">
+                <div>
+                    <div class="lbl">Vehicle Speed</div>
+                    <div class="speed-xl" id="gps-spd-big">0</div>
+                    <div class="unit">km / h</div>
+                </div>
+                <div>
+                    <div class="div"></div>
+                    <div class="er"><span class="ek">Latitude</span><span class="ev" id="gps-lat2">--</span></div>
+                    <div class="er"><span class="ek">Longitude</span><span class="ev" id="gps-lon2">--</span></div>
+                    <div class="er"><span class="ek">Altitude</span><span class="ev" id="gps-alt2">-- m</span></div>
+                    <div class="er"><span class="ek">Satellites</span><span class="ev" id="gps-sats2">0</span></div>
+                    <div class="er"><span class="ek">Status</span>
+                        <div class="pill off" id="gps-fix-pill"><div class="pd"></div><span id="gps-fix-t">No Fix</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card cp" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px">
+                <div class="lbl">Heading</div>
+                <div class="compass"><div class="cn" id="compassNeedle"></div></div>
+                <div style="font-family:DM Mono,monospace;font-size:20px" id="gps-track">---°</div>
+            </div>
+
+            <div class="card cp" style="display:flex;flex-direction:column;justify-content:center">
+                <div class="lbl">Last Update</div>
+                <div style="font-family:DM Mono,monospace;font-size:14px;color:var(--text2);margin-top:4px" id="gps-time">--:--:--</div>
+                <div class="div"></div>
+                <div class="lbl">Distance (session)</div>
+                <div style="font-family:DM Mono,monospace;font-size:20px;margin-top:3px" id="gps-dist">0.0 km</div>
+            </div>
+
+        </div>
+
+        <!-- IMU -->
+        <div class="page" id="page-imu">
+
+            <div class="card cp">
+                <div class="lbl">Longitudinal G</div>
+                <div class="val lg" id="imu-x-big" style="margin-top:3px">0.00</div>
+                <div class="unit">G</div>
+                <div class="gbar" style="margin-top:9px"><div class="gbar-zero"></div><div class="gbar-fill" id="ib-x" style="left:50%;width:0%"></div></div>
+            </div>
+            <div class="card cp">
+                <div class="lbl">Lateral G</div>
+                <div class="val lg" id="imu-y-big" style="margin-top:3px">0.00</div>
+                <div class="unit">G</div>
+                <div class="gbar" style="margin-top:9px"><div class="gbar-zero"></div><div class="gbar-fill" id="ib-y" style="left:50%;width:0%"></div></div>
+            </div>
+            <div class="card cp">
+                <div class="lbl">Vertical G</div>
+                <div class="val lg" id="imu-z-big" style="margin-top:3px">0.00</div>
+                <div class="unit">G</div>
+                <div class="gbar" style="margin-top:9px"><div class="gbar-zero"></div><div class="gbar-fill" id="ib-z" style="left:50%;width:0%"></div></div>
+            </div>
+
+            <div class="card s2c" style="padding:12px;display:flex;flex-direction:column">
+                <div class="lbl" style="margin-bottom:7px">G-Force Plot</div>
+                <canvas id="gCross" width="300" height="140" style="width:100%;flex:1;max-height:150px;border-radius:10px;background:rgba(0,0,0,.25)"></canvas>
+            </div>
+
+            <div class="card cp" style="display:flex;flex-direction:column;justify-content:space-between">
+                <div class="lbl">Peak G</div>
+                <div style="display:flex;gap:14px;margin-top:6px">
+                    <div><div style="font-size:9px;color:var(--text3)">LATERAL</div>
+                        <div style="font-family:DM Mono,monospace;font-size:22px;color:var(--amber);text-shadow:0 0 10px rgba(245,158,11,.3)" id="peak-lat">0.00</div></div>
+                    <div><div style="font-size:9px;color:var(--text3)">LONG</div>
+                        <div style="font-family:DM Mono,monospace;font-size:22px;color:var(--amber);text-shadow:0 0 10px rgba(245,158,11,.3)" id="peak-long">0.00</div></div>
+                </div>
+                <button onclick="resetPeaks()" style="margin-top:8px;padding:6px 12px;border:1px solid rgba(255,255,255,.1);border-radius:999px;background:transparent;color:var(--text3);font-family:DM Sans,sans-serif;font-size:11px;cursor:pointer">Reset peaks</button>
+            </div>
+
+        </div>
+
+        <!-- SDR -->
+        <div class="page" id="page-sdr">
+
+            <div class="card cp s2c">
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                    <div><div class="lbl">RTL-SDR Receiver</div><div class="sdr-freq" id="sdr-freq-disp">88.000 MHz</div></div>
+                    <div class="pill warn"><div class="pd"></div>USB Dongle Required</div>
+                </div>
+            </div>
+
+            <div class="card" style="padding:12px;grid-row:2/4">
+                <div class="lbl" style="margin-bottom:7px">Spectrum</div>
+                <canvas id="sdrCanvas" width="360" height="110" style="width:100%;border-radius:9px;background:rgba(0,0,0,.3)"></canvas>
+                <div style="display:flex;gap:5px;margin-top:9px">
+                    <button class="sdb" onclick="sdrAdj(-1)">−1M</button>
+                    <button class="sdb" onclick="sdrAdj(-.1)">−100k</button>
+                    <button class="sdb" onclick="sdrAdj(.1)">+100k</button>
+                    <button class="sdb" onclick="sdrAdj(1)">+1M</button>
+                </div>
+            </div>
+
+            <div class="card cp">
+                <div class="lbl" style="margin-bottom:9px">Presets</div>
+                <div style="display:flex;flex-direction:column;gap:5px">
+                    <button class="cb" onclick="setFreq(88.0)" style="flex-direction:row;align-items:center;gap:8px;padding:8px 10px"><span style="color:var(--text3);font-size:10px;min-width:55px;font-family:DM Mono,monospace">88.0</span>FM Radio</button>
+                    <button class="cb" onclick="setFreq(121.5)" style="flex-direction:row;align-items:center;gap:8px;padding:8px 10px"><span style="color:var(--accent);font-size:10px;min-width:55px;font-family:DM Mono,monospace">121.5</span>Aviation Guard</button>
+                    <button class="cb" onclick="setFreq(156.8)" style="flex-direction:row;align-items:center;gap:8px;padding:8px 10px"><span style="color:var(--teal);font-size:10px;min-width:55px;font-family:DM Mono,monospace">156.8</span>Marine Ch 16</button>
+                    <button class="cb" onclick="setFreq(433.92)" style="flex-direction:row;align-items:center;gap:8px;padding:8px 10px"><span style="color:var(--text3);font-size:10px;min-width:55px;font-family:DM Mono,monospace">433.9</span>ISM / Keyfobs</button>
+                </div>
+            </div>
+
+            <div class="card cp">
+                <div class="lbl" style="margin-bottom:7px">Device</div>
+                <div style="font-size:11px;color:var(--text3);line-height:2">
+                    RTL2832U / R820T2<br>Sample: 2.048 MSPS<br>Gain: Auto<br>PPM: 0
+                </div>
+            </div>
+
+        </div>
+
     </div>
 </div>
 
 <script>
-    async function poll() {
-        try {
-            const res = await fetch('/api/state');
-            const s = await res.json();
+    // Clock
+    function tick(){ const d=new Date(); document.getElementById('clock').textContent=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+    setInterval(tick,1000); tick();
 
-            document.getElementById('rpm').textContent = s.rpm;
-            document.getElementById('water_temp_c').textContent = s.water_temp_c + ' °C';
-            document.getElementById('oil_pressure').textContent = s.oil_pressure.toFixed(1) + ' bar';
-            document.getElementById('lights_on').className = 'value ' + (s.lights_on ? 'on' : 'off');
-            document.getElementById('lights_on').textContent = s.lights_on ? 'ON' : 'OFF';
-            document.getElementById('gps').textContent = s.gps_valid
-                ? `${s.gps_lat.toFixed(4)}, ${s.gps_lon.toFixed(4)}`
-                : 'NO FIX';
-            document.getElementById('imu').textContent = `${s.imu_x.toFixed(2)} / ${s.imu_y.toFixed(2)}`;
-        } catch (e) {
-            console.error('Poll failed:', e);
-        }
+    // Nav
+    function sp(name,btn){
+        document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+        document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+        document.getElementById('page-'+name).classList.add('active');
+        btn.classList.add('active');
+        if(name==='sdr') startSdr();
     }
 
-    setInterval(poll, 100);
-    poll();
+    // State
+    let S={rpm:0,water_temp_c:0,oil_pressure:0,lights_on:false,beam_on:false,lights_up:false,parking_brake_on:false,
+        gps_valid:false,gps_lat:0,gps_lon:0,gps_speed:0,gps_sats:0,gps_alt:0,imu_x:0,imu_y:0,imu_z:0};
+    let peakLat=0,peakLong=0,gHist=[],errs=0;
+
+    async function poll(){
+        try{ const r=await fetch('/api/state'); S=await r.json(); errs=0; setConn(true); render(); }
+        catch{ errs++; if(errs>3) setConn(false); }
+    }
+    setInterval(poll,100); poll();
+
+    function setConn(ok){
+        document.getElementById('connDot').className='dot'+(ok?'':' err');
+        document.getElementById('connLbl').textContent=ok?'Online':'Fault';
+    }
+
+    function render(){
+        const r=S.rpm||0, wt=S.water_temp_c||0, op=S.oil_pressure||0;
+        const ix=S.imu_x||0, iy=S.imu_y||0, iz=S.imu_z||0, gok=S.gps_valid;
+
+        // GPS badge
+        document.getElementById('gpsDot').className='dot'+(gok?'':' err');
+        document.getElementById('gpsLbl').textContent=gok?`${S.gps_sats} Sats`:'No Fix';
+
+        // RPM
+        set('rpm-big', r.toLocaleString());
+        document.getElementById('rpmBar').style.width=Math.min(r/8000*100,100)+'%';
+        document.getElementById('rpmBar').className='bar-fill '+(r>7000?'amber':r>5000?'purple':'green');
+
+        // Status pills on sensors page
+        pill('pl-lights','pl-lights-t',S.lights_on,'Lights On','Lights Off');
+        pill('pl-beam','pl-beam-t',S.beam_on,'Beam On','Beam Off');
+        pill('pl-up','pl-up-t',S.lights_up,'Lights Up','Lights Down');
+        pill('pl-brake','pl-brake-t',S.parking_brake_on,'P-Brake','Brake Off',S.parking_brake_on?'err':'off');
+
+        // Water
+        set('water-val', wt||'--');
+        document.getElementById('waterBar').style.width=Math.min(wt/120*100,100)+'%';
+        document.getElementById('waterBar').className='bar-fill '+(wt>105?'amber':'green');
+        pill('water-pill','water-pill-t',wt>105,'Overheat!',wt>90?'Warm':'Normal',wt>105?'err':wt>90?'warn':'on');
+
+        // Oil
+        set('oil-val', op.toFixed(1));
+        document.getElementById('oilBar').style.width=Math.min(op/6*100,100)+'%';
+        document.getElementById('oilBar').className='bar-fill '+(op<0.5&&r>800?'amber':'green');
+        pill('oil-pill','oil-pill-t',op>0.5||r<800,'Good','Low Oil!',op<0.5&&r>800?'err':'on');
+
+        // G
+        set('s-gx',ix.toFixed(2)); set('s-gy',iy.toFixed(2)); set('s-gz',iz.toFixed(2));
+        setGbar('gBarLat',iy);
+
+        // GPS mini
+        set('s-lat', gok?S.gps_lat.toFixed(5)+'°':'--');
+        set('s-lon', gok?S.gps_lon.toFixed(5)+'°':'--');
+        set('s-spd', gok?Math.round(S.gps_speed)+' km/h':'--');
+        pill('s-fix','s-fix-t',gok,'Fixed','No Fix',gok?'on':'off');
+
+        // Lights ctrl page
+        pill('lc-l','lc-l-t',S.lights_on,'On','Off');
+        pill('lc-b','lc-b-t',S.beam_on,'Beam On','Off');
+        pill('lc-u','lc-u-t',S.lights_up,'Up','Down');
+
+        // GPS page
+        set('gps-spd-big', gok?Math.round(S.gps_speed||0):'0');
+        set('gps-lat2', gok?S.gps_lat.toFixed(6)+'°':'--');
+        set('gps-lon2', gok?S.gps_lon.toFixed(6)+'°':'--');
+        set('gps-alt2', gok?(S.gps_alt||0).toFixed(0)+' m':'-- m');
+        set('gps-sats2', S.gps_sats||0);
+        pill('gps-fix-pill','gps-fix-t',gok,'Fixed','No Fix',gok?'on':'off');
+        if(gok) set('gps-time', new Date().toLocaleTimeString());
+
+        // IMU big
+        gVal('imu-x-big',ix); gVal('imu-y-big',iy); gVal('imu-z-big',iz);
+        setGbar('ib-x',ix); setGbar('ib-y',iy); setGbar('ib-z',iz);
+        if(Math.abs(iy)>peakLat){peakLat=Math.abs(iy);set('peak-lat',peakLat.toFixed(2));}
+        if(Math.abs(ix)>peakLong){peakLong=Math.abs(ix);set('peak-long',peakLong.toFixed(2));}
+        if(document.getElementById('page-imu').classList.contains('active')) drawGCross();
+    }
+
+    function set(id,v){const e=document.getElementById(id);if(e)e.textContent=v;}
+    function pill(pid,tid,active,onT,offT,cls){
+        const p=document.getElementById(pid),t=document.getElementById(tid);
+        if(!p||!t) return;
+        p.className='pill '+(cls||(active?'on':'off'));
+        t.textContent=active?onT:offT;
+    }
+    function gVal(id,v){
+        const e=document.getElementById(id); if(!e) return;
+        e.textContent=v.toFixed(2);
+        e.style.color=Math.abs(v)>2?'var(--red)':Math.abs(v)>1?'var(--amber)':'var(--text)';
+    }
+    function setGbar(id,val){
+        const e=document.getElementById(id); if(!e) return;
+        const pct=Math.min(Math.abs(val)/3*50,50);
+        if(val>=0){e.style.left='50%';e.style.width=pct+'%';}
+        else{e.style.left=(50-pct)+'%';e.style.width=pct+'%';}
+    }
+
+    // G Cross
+    function drawGCross(){
+        const c=document.getElementById('gCross'); if(!c) return;
+        const ctx=c.getContext('2d'),W=c.width,H=c.height,cx=W/2,cy=H/2,sc=Math.min(W,H)/2/3.2;
+        ctx.clearRect(0,0,W,H);
+        [1,2,3].forEach(g=>{
+            ctx.beginPath(); ctx.arc(cx,cy,g*sc,0,Math.PI*2);
+            ctx.strokeStyle=`rgba(168,85,247,${g===1?.14:.07})`; ctx.lineWidth=1; ctx.stroke();
+        });
+        ctx.strokeStyle='rgba(255,255,255,.08)'; ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(cx,0); ctx.lineTo(cx,H); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0,cy); ctx.lineTo(W,cy); ctx.stroke();
+        gHist.push({x:S.imu_y||0,y:-(S.imu_x||0)});
+        if(gHist.length>80) gHist.shift();
+        gHist.forEach((pt,i)=>{
+            ctx.beginPath(); ctx.arc(cx+pt.x*sc,cy+pt.y*sc,2,0,Math.PI*2);
+            ctx.fillStyle=`rgba(168,85,247,${i/gHist.length*.55})`; ctx.fill();
+        });
+        const gx=cx+(S.imu_y||0)*sc, gy=cy-(S.imu_x||0)*sc;
+        ctx.beginPath(); ctx.arc(gx,gy,5,0,Math.PI*2);
+        ctx.fillStyle='#a855f7'; ctx.shadowColor='#a855f7'; ctx.shadowBlur=12; ctx.fill(); ctx.shadowBlur=0;
+    }
+    setInterval(drawGCross,80);
+    function resetPeaks(){peakLat=0;peakLong=0;gHist=[];set('peak-lat','0.00');set('peak-long','0.00');}
+
+    // SDR
+    let sdrFreq=88.0, sdrAf=null;
+    function startSdr(){ if(!sdrAf) sdrLoop(); }
+    function sdrLoop(){ drawSdr(); if(document.getElementById('page-sdr').classList.contains('active')) sdrAf=requestAnimationFrame(sdrLoop); else sdrAf=null; }
+    function drawSdr(){
+        const c=document.getElementById('sdrCanvas'); if(!c) return;
+        const ctx=c.getContext('2d'),W=c.width,H=c.height;
+        ctx.clearRect(0,0,W,H);
+        ctx.beginPath(); ctx.moveTo(0,H);
+        for(let x=0;x<W;x++){ const n=Math.random()*7,s=sig(x/W); ctx.lineTo(x,H-n-s); }
+        ctx.lineTo(W,H); ctx.closePath();
+        const g=ctx.createLinearGradient(0,0,0,H);
+        g.addColorStop(0,'rgba(45,212,191,.55)'); g.addColorStop(1,'rgba(45,212,191,.04)');
+        ctx.fillStyle=g; ctx.fill();
+        ctx.strokeStyle='rgba(45,212,191,.85)'; ctx.lineWidth=1.5; ctx.stroke();
+        ctx.strokeStyle='rgba(168,85,247,.65)'; ctx.lineWidth=1; ctx.setLineDash([3,3]);
+        ctx.beginPath(); ctx.moveTo(W/2,0); ctx.lineTo(W/2,H); ctx.stroke(); ctx.setLineDash([]);
+    }
+    function sig(p){ const d=Math.abs(p-.5); return 48*Math.exp(-d*d*2800)*(0.7+Math.random()*.3); }
+    function sdrAdj(d){ sdrFreq=Math.max(24,Math.min(1800,sdrFreq+d)); set('sdr-freq-disp',sdrFreq.toFixed(3)+' MHz'); }
+    function setFreq(f){ sdrFreq=f; set('sdr-freq-disp',f.toFixed(3)+' MHz'); }
+
+    // Commands
+    async function sendCmd(cmd){
+        set('cmdlog','↑ '+cmd+' · '+new Date().toLocaleTimeString());
+        try{ await fetch('/api/command',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({command:cmd})}); }
+        catch{ set('cmdlog','⚠ Failed: '+cmd); }
+    }
+
+    // EFI
+    function connectEFI(){
+        const p=document.getElementById('ecuPill'),t=document.getElementById('ecuPill-t');
+        p.className='pill warn'; t.textContent='Connecting…';
+        setTimeout(()=>{ p.className='pill err'; t.textContent='Not Found'; },2000);
+    }
 </script>
 </body>
 </html>
