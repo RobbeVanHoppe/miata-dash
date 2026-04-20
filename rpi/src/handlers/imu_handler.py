@@ -10,13 +10,14 @@ class ImuHandler(BaseHandler):
             self._parse(message.payload, state)
 
     def _parse(self, payload: str, state: SharedState) -> None:
-        # Expected format: "x,y,z"
+        # Format: "x,y,z"
+        # Example: "0.02,0.98,0.15"
         try:
-            x, y, z = payload.split(",")
+            parts = payload.split(",")
             state.update(
-                imu_x=float(x),
-                imu_y=float(y),
-                imu_z=float(z),
+                imu_x=float(parts[0]),
+                imu_y=float(parts[1]),
+                imu_z=float(parts[2]),
             )
-        except (ValueError, TypeError) as e:
+        except (IndexError, ValueError) as e:
             print(f"[ImuHandler] Failed to parse payload '{payload}': {e}")

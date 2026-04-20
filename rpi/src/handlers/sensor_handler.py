@@ -10,16 +10,17 @@ class SensorHandler(BaseHandler):
             self._parse(message.payload, state)
 
     def _parse(self, payload: str, state: SharedState) -> None:
-        # Expected format from Nano: "L:%d,B:%d,U:%d,R:%d,W:%d,O:%.1f"
+        # Format: "lights,beam,up,rpm,water,oil*10"
+        # Example: "1,0,1,1500,88,32"
         try:
-            parts = dict(p.split(":") for p in payload.split(","))
+            parts = payload.split(",")
             state.update(
-                lights_on=bool(int(parts["L"])),
-                beam_on=bool(int(parts["B"])),
-                lights_up=bool(int(parts["U"])),
-                rpm=int(parts["R"]),
-                water_temp_c=int(parts["W"]),
-                oil_pressure=float(parts["O"]),
+                lights_on=bool(int(parts[0])),
+                beam_on=bool(int(parts[1])),
+                lights_up=bool(int(parts[2])),
+                rpm=int(parts[3]),
+                water_temp_c=int(parts[4]),
+                oil_pressure=int(parts[5]) / 10.0,
             )
-        except (KeyError, ValueError) as e:
+        except (IndexError, ValueError) as e:
             print(f"[SensorHandler] Failed to parse payload '{payload}': {e}")

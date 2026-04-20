@@ -12,7 +12,8 @@ class GpsHandler(BaseHandler):
             state.update(gps_valid=False)
 
     def _parse(self, payload: str, state: SharedState) -> None:
-        # Expected format: "lat,lon,speed,alt,sats"
+        # Format: "lat,lon,speed,sats"
+        # Example: "51.5074,-0.1278,60,8"
         try:
             parts = payload.split(",")
             state.update(
@@ -20,8 +21,7 @@ class GpsHandler(BaseHandler):
                 gps_lat=float(parts[0]),
                 gps_lon=float(parts[1]),
                 gps_speed=float(parts[2]),
-                gps_alt=float(parts[3]),
-                gps_sats=int(parts[4]),
+                gps_sats=int(parts[3]),
             )
         except (IndexError, ValueError) as e:
             print(f"[GpsHandler] Failed to parse payload '{payload}': {e}")
