@@ -34,8 +34,13 @@ class I2CMaster:
 
     def start(self):
         if self._bus is None:
-            import smbus2
-            self._bus = smbus2.SMBus(1)  # /dev/i2c-1
+            import os
+            if os.environ.get("MIATA_ENV") == "mock":
+                from src.bus.mock_i2c import MockBus
+                self._bus = MockBus()
+            else:
+                import smbus2
+                self._bus = smbus2.SMBus(1)  # /dev/i2c-1
 
         self._running = True
         self._thread = threading.Thread(target=self._loop, daemon=True)
