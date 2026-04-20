@@ -1,13 +1,18 @@
 from flask import Flask, jsonify, render_template
 from src.car_state import SharedState
+from src.web.command_routes import commands_bp, init_commander
+from src.bus.i2c_commander import I2CCommander
 
 app = Flask(__name__)
+app.register_blueprint(commands_bp)
+
 _state: SharedState = None
 
 
-def init_app(state: SharedState):
+def init_app(state: SharedState, commander: I2CCommander):
     global _state
     _state = state
+    init_commander(commander)
 
 
 @app.route("/")
