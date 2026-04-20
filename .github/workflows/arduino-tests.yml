@@ -16,7 +16,7 @@ on:
       - 'platformio.ini'
 
 jobs:
-  test-sensors:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -28,35 +28,5 @@ jobs:
         with:
           python-version: '3.11'
       - run: pip install platformio
-      - name: Run sensor tests
-        run: pio test -e test_sensors
-
-  test-gps:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/cache@v4
-        with:
-          path: ~/.platformio
-          key: pio-${{ runner.os }}-${{ hashFiles('platformio.ini') }}
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - run: pip install platformio
-      - name: Run GPS tests
-        run: pio test -e test_gps
-
-  test-imu:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/cache@v4
-        with:
-          path: ~/.platformio
-          key: pio-${{ runner.os }}-${{ hashFiles('platformio.ini') }}
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - run: pip install platformio
-      - name: Run IMU tests
-        run: pio test -e test_imu
+      - name: Run native tests
+        run: pio test -e native_tests
