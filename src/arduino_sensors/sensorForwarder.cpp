@@ -2,7 +2,7 @@
 #include "common/carState.h"
 
 #define WAT_T_RESISTOR_VALUE 330.00
-#define OIL_P_RESISTOR_VALUE 180.52
+#define OIL_P_RESISTOR_VALUE 180.62
 
 static SensorForwarder* instance = nullptr;
 static CarState sensorNodeState;
@@ -19,7 +19,7 @@ int readWaterTemp() {
     if (raw < 10 || raw > 1010) return 0;
 
     float voltage = raw * (5.0 / 1023.0);
-    float rSensor = (WAT_T_RESISTOR_VALUE * voltage) / (5.0 - voltage);
+    float rSensor = (voltage * WAT_T_RESISTOR_VALUE) / (5.0 - voltage);
 
     // Steinhart-Hart coefficients derived from Mazda B6 coolant sensor
     // Source: 1990 MX-5 Workshop Manual p.F-136
@@ -75,20 +75,31 @@ void SensorForwarder::begin() {
 
     analogReference(DEFAULT);
 
-    pinMode(RelayLightsPin, OUTPUT);
-    pinMode(RelayRetractorPin, OUTPUT);
-    pinMode(RelayBeamPin, OUTPUT);
-    digitalWrite(RelayLightsPin, HIGH);
-    digitalWrite(RelayRetractorPin, HIGH);
-    digitalWrite(RelayBeamPin, HIGH);
+    // ── Relay outputs — all start HIGH (relay off, active low) ──
+    const uint8_t relayPins[] = {
+            RelayLightsPin, RelayBeamPin,
+            RelayRetractUpPin, RelayRetractDownPin,
+            RelayAccPin, RelayInteriorPin
+    };
+    for (uint8_t pin : relayPins) {
+        pinMode(pin, OUTPUT);
+        digitalWrite(pin, HIGH);
+    }
 
+    // ── Opto inputs ──────────────────────────────────────────────
+    const uint8_t optoPins[] = {
+            OptoLightPin, OptoBeamPin, OptoBrakePin
+            // OptoTachoPin handled separately below (interrupt)
+    };
+    for (uint8_t pin : optoPins) {
+        pinMode(pin, INPUT_PULLUP);
+    }
+
+    // ── Tacho interrupt ──────────────────────────────────────────
     pinMode(OptoTachoPin, INPUT_PULLUP);
-    pinMode(OptoLightPin, INPUT_PULLUP);
-    pinMode(OptoBeamPin, INPUT_PULLUP);
-    pinMode(OptoBrakePin, INPUT_PULLUP);
-
     attachInterrupt(digitalPinToInterrupt(OptoTachoPin), tachoISR, FALLING);
 
+    // ── I2C ──────────────────────────────────────────────────────
     Wire.begin(nodeToAddress(nodeType_));
     Wire.onRequest([](){ if (instance) instance->onI2CRequest(); });
     Wire.onReceive([](int len){ if (instance) instance->handleI2CReceive(len); });
@@ -100,7 +111,7 @@ void SensorForwarder::update() {
     sensorNodeState.lightsOn  = (digitalRead(OptoLightPin) == LOW);
     sensorNodeState.beamOn    = (digitalRead(OptoBeamPin)  == LOW);
     sensorNodeState.parkingBrakeOn = (digitalRead(OptoBrakePin) == LOW);
-    sensorNodeState.lightsUp  = 1; // Retractor relay state
+    sensorNodeState.lightsUp = lightsUp_;
 
     // 2. Analog Updates
     sensorNodeState.OilPressure = readOilPressure();
@@ -127,6 +138,13 @@ void SensorForwarder::update() {
         Serial.print("Payload: "); Serial.println(readyMsg.payload);
         lastPrint = millis();
     }
+
+    // Retractor stall protection — cut motor after 1500ms
+    if (retractorRunning_ && (millis() - retractorTimer_ > 1500)) {
+        digitalWrite(RelayRetractUpPin,   HIGH);
+        digitalWrite(RelayRetractDownPin, HIGH);
+        retractorRunning_ = false;
+    }
 }
 
 void SensorForwarder::handleI2CReceive(int len) {
@@ -139,13 +157,38 @@ void SensorForwarder::handleI2CReceive(int len) {
 }
 
 void SensorForwarder::processCommand(const Message& msg) {
-    if      (strcmp(msg.payload, "RELAY_RETRACT_UP")   == 0) digitalWrite(RelayRetractorPin, LOW);
-    else if (strcmp(msg.payload, "RELAY_RETRACT_DOWN") == 0) digitalWrite(RelayRetractorPin, HIGH);
-    else if (strcmp(msg.payload, "RELAY_LIGHTS_ON")    == 0) digitalWrite(RelayLightsPin, LOW);
-    else if (strcmp(msg.payload, "RELAY_BEAM_ON")      == 0) digitalWrite(RelayBeamPin, LOW);
-    else if (strcmp(msg.payload, "RELAY_BEAM_OFF")     == 0) digitalWrite(RelayBeamPin, HIGH);
-    else if (strcmp(msg.payload, "RELAY_LIGHTS_OFF")   == 0) {
-        digitalWrite(RelayLightsPin, HIGH);
-        digitalWrite(RelayBeamPin, HIGH);
+    // ── Lighting ──────────────────────────────────────────────
+    if      (strcmp(msg.payload, "LIGHTS_ON")  == 0) {
+        digitalWrite(RelayLightsPin, LOW);
     }
+    else if (strcmp(msg.payload, "LIGHTS_OFF") == 0) {
+        digitalWrite(RelayLightsPin, HIGH);
+        digitalWrite(RelayBeamPin,   HIGH);   // beam can't stay on without lights
+    }
+    else if (strcmp(msg.payload, "BEAM_ON")    == 0) digitalWrite(RelayBeamPin, LOW);
+    else if (strcmp(msg.payload, "BEAM_OFF")   == 0) digitalWrite(RelayBeamPin, HIGH);
+
+        // ── Retractor (H-bridge: two relay pins, mutually exclusive) ──
+    else if (strcmp(msg.payload, "RETRACT_UP") == 0) {
+        digitalWrite(RelayRetractDownPin, HIGH);  // ensure reverse is off first
+        digitalWrite(RelayRetractUpPin,   LOW);
+        retractorTimer_ = millis();               // start stall-protection timer
+        retractorRunning_ = true;
+        lightsUp_         = true;
+    }
+    else if (strcmp(msg.payload, "RETRACT_DOWN") == 0) {
+        digitalWrite(RelayRetractUpPin,   HIGH);
+        digitalWrite(RelayRetractDownPin, LOW);
+        retractorTimer_ = millis();
+        retractorRunning_ = true;
+        lightsUp_         = false;
+    }
+
+        // ── ACC bus ───────────────────────────────────────────────
+    else if (strcmp(msg.payload, "ACC_ON")  == 0) digitalWrite(RelayAccPin, LOW);
+    else if (strcmp(msg.payload, "ACC_OFF") == 0) digitalWrite(RelayAccPin, HIGH);
+
+        // ── Interior light ────────────────────────────────────────
+    else if (strcmp(msg.payload, "INTERIOR_ON")  == 0) digitalWrite(RelayInteriorPin, LOW);
+    else if (strcmp(msg.payload, "INTERIOR_OFF") == 0) digitalWrite(RelayInteriorPin, HIGH);
 }
