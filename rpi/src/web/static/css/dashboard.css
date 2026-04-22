@@ -141,6 +141,28 @@ body::before {
 #page-sensors { grid-template-columns:1.1fr .75fr .75fr; grid-template-rows:1fr 1fr; gap:9px; }
 #page-lights  { grid-template-columns:1fr 1fr; grid-template-rows:auto 1fr; gap:9px; }
 #page-efi     { grid-template-columns:1.2fr 1fr; grid-template-rows:1fr 1fr; gap:9px; }
-#page-gps     { grid-template-columns:1.2fr 1fr; grid-template-rows:1fr 1fr; gap:9px; }
+#page-gps     { grid-template-columns:1fr 0.72fr 1.5fr; grid-template-rows:1fr 1fr; gap:9px; position:relative; }
 #page-imu     { grid-template-columns:1fr 1fr 1fr; grid-template-rows:auto 1fr auto; gap:9px; }
 #page-sdr     { grid-template-columns:1fr 1fr; grid-template-rows:auto 1fr auto; gap:9px; }
+
+/* ── Leaflet map card ── */
+.map-card { padding:0; overflow:hidden; }
+.map-lbl  { position:absolute; top:10px; left:12px; z-index:500; font-size:10px; font-weight:500; letter-spacing:.06em; text-transform:uppercase; color:rgba(241,238,255,.55); background:rgba(14,11,26,.65); padding:3px 9px; border-radius:999px; backdrop-filter:blur(8px); pointer-events:none; }
+#map      { width:100%; height:100%; }
+
+/* ── Avg speed overlay ── */
+#avg-overlay {
+    display:none; position:absolute; inset:0; z-index:200;
+    background:rgba(14,11,26,.88); backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px);
+    border-radius:var(--radius); border:1px solid rgba(168,85,247,.35);
+    flex-direction:column; align-items:center; justify-content:center; gap:6px;
+    animation:fadeUp .25s cubic-bezier(.4,0,.2,1) both;
+}
+#avg-overlay.active { display:flex; }
+.avg-mode-row { display:flex; align-items:center; gap:7px; margin-bottom:8px; }
+.avg-dot      { width:7px; height:7px; border-radius:50%; background:var(--accent); box-shadow:0 0 8px var(--accent); animation:blink .9s infinite; flex-shrink:0; }
+.avg-mode-lbl { font-size:11px; font-weight:500; letter-spacing:.1em; color:var(--accent); text-transform:uppercase; }
+.avg-speed-big  { font-family:'DM Mono',monospace; font-size:100px; font-weight:400; line-height:1; letter-spacing:-.04em; background:var(--accent-g); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.avg-speed-unit { font-size:13px; color:var(--text3); letter-spacing:.05em; margin-top:2px; }
+.avg-elapsed    { font-family:'DM Mono',monospace; font-size:22px; color:var(--text2); margin-top:10px; }
+.avg-hint       { font-size:10px; color:var(--text3); margin-top:6px; }

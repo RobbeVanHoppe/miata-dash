@@ -30,7 +30,10 @@ def dashboard():
 
 @app.route('/api/state')
 def api_state():
-    return jsonify(_state.snapshot())
+    snap = _state.snapshot()
+    if snap.get('avg_btn_event'):
+        _state.update(avg_btn_event=False)
+    return jsonify(snap)
 
 
 @app.route('/api/command', methods=['POST'])
