@@ -1,3 +1,4 @@
+import os
 from src.car_state import SharedState
 from src.bus.i2c_master import I2CMaster
 from src.bus.i2c_commander import I2CCommander
@@ -26,7 +27,8 @@ def main():
     init_app(state, commander)
     print("Miata Dash - RPi Node Online")
     print("Dashboard available at http://localhost:5000")
-    app.run(host="0.0.0.0", port=5000)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
 
 
 if __name__ == "__main__":

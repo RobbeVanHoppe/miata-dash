@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Miata Dash (Flask)",
+      "runtimeExecutable": "C:\\msys64\\mingw64\\bin\\python3.exe",
+      "runtimeArgs": ["run_server.py"],
+      "port": 5000,
+      "autoPort": true
+    }
+  ]
+}

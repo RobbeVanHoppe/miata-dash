@@ -7,6 +7,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/dashboard.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 </head>
 <body>
 <div id="app">
@@ -215,6 +217,23 @@
                 <div class="divider"></div>
                 <div class="lbl">Session Distance</div>
                 <div style="font-family:DM Mono,monospace;font-size:20px;margin-top:3px" id="gps-dist">0.0 km</div>
+            </div>
+
+            <div class="card s2r map-card">
+                <div class="map-lbl">Live Map</div>
+                <div id="map"></div>
+            </div>
+
+            <!-- Avg speed check overlay — shown when button is active -->
+            <div id="avg-overlay">
+                <div class="avg-mode-row">
+                    <div class="dot avg-dot"></div>
+                    <span class="avg-mode-lbl">Avg Speed Check</span>
+                </div>
+                <div class="avg-speed-big" id="avg-speed-val">0</div>
+                <div class="avg-speed-unit">km / h average</div>
+                <div class="avg-elapsed" id="avg-elapsed">00:00</div>
+                <div class="avg-hint">Press button again to stop</div>
             </div>
 
         </div><!-- /gps -->
