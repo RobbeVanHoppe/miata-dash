@@ -1,0 +1,146 @@
+/* dashboard.css — Miata Dash styles */
+
+:root {
+    --bg:       #0e0b1a;
+    --card:     rgba(255,255,255,0.055);
+    --card-b:   rgba(255,255,255,0.08);
+    --accent:   #a855f7;
+    --accent2:  #7c3aed;
+    --accent-g: linear-gradient(135deg,#a855f7,#7c3aed);
+    --teal:     #2dd4bf;
+    --amber:    #f59e0b;
+    --red:      #f43f5e;
+    --green:    #4ade80;
+    --text:     #f1eeff;
+    --text2:    rgba(241,238,255,0.55);
+    --text3:    rgba(241,238,255,0.28);
+    --radius:   18px;
+    --radius-sm:12px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+html, body { width:100%; height:100%; background:var(--bg); font-family:'DM Sans',sans-serif; color:var(--text); overflow:hidden; }
+
+/* Ambient glow blobs */
+body::before {
+    content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+    background:
+            radial-gradient(ellipse 55% 45% at 15% 20%, rgba(124,58,237,0.18) 0%, transparent 70%),
+            radial-gradient(ellipse 40% 35% at 85% 75%, rgba(168,85,247,0.12) 0%, transparent 70%),
+            radial-gradient(ellipse 30% 30% at 60% 10%, rgba(45,212,191,0.06) 0%, transparent 70%);
+}
+
+#app { position:relative; z-index:1; display:flex; flex-direction:column; width:100vw; height:100vh; }
+
+/* ── Top bar ── */
+#topbar { padding:12px 20px 0; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+.tb-title { font-size:18px; font-weight:600; letter-spacing:-.02em; background:linear-gradient(90deg, var(--text) 0%, rgba(168,85,247,0.85) 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.tb-sub   { font-size:10px; color:var(--text3); letter-spacing:.04em; margin-top:1px; }
+.tb-right { display:flex; align-items:center; gap:8px; }
+.tb-chip  { display:flex; align-items:center; gap:5px; background:var(--card); border:1px solid var(--card-b); border-radius:999px; padding:5px 11px; font-size:11px; color:var(--text2); backdrop-filter:blur(12px); }
+#clock    { font-family:'DM Mono',monospace; font-size:12px; color:var(--text2); background:var(--card); border:1px solid var(--card-b); border-radius:999px; padding:5px 13px; backdrop-filter:blur(12px); }
+
+/* ── Status dots ── */
+.dot      { width:6px; height:6px; border-radius:50%; background:var(--green); box-shadow:0 0 5px var(--green); }
+.dot.err  { background:var(--red);   box-shadow:0 0 5px var(--red); }
+.dot.warn { background:var(--amber); box-shadow:0 0 5px var(--amber); }
+
+/* ── Nav tabs ── */
+#navtabs { padding:10px 20px 0; display:flex; gap:5px; flex-shrink:0; }
+.tab { padding:7px 16px; border-radius:999px; font-size:12px; font-weight:500; border:none; cursor:pointer; transition:all .2s; color:var(--text3); background:transparent; }
+.tab:hover  { color:var(--text2); background:var(--card); }
+.tab.active { background:var(--accent-g); color:#fff; box-shadow:0 4px 14px rgba(168,85,247,0.35); }
+
+/* ── Content area ── */
+#content { flex:1; overflow:hidden; padding:10px 20px 14px; }
+.page { display:none; height:100%; }
+.page.active { display:grid; }
+
+/* ── Card base ── */
+.card {
+    background:var(--card); border:1px solid var(--card-b); border-radius:var(--radius);
+    backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+    overflow:hidden; position:relative; transition:border-color .2s;
+    animation:fadeUp .3s cubic-bezier(.4,0,.2,1) both;
+}
+.card:nth-child(2){animation-delay:.04s} .card:nth-child(3){animation-delay:.08s}
+.card:nth-child(4){animation-delay:.12s} .card:nth-child(5){animation-delay:.16s}
+.card:nth-child(6){animation-delay:.20s}
+.card:hover { border-color:rgba(168,85,247,0.22); }
+.card-accent { background:var(--accent-g); border:none; }
+
+@keyframes fadeUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+.cp  { padding:14px; }
+
+/* ── Typography ── */
+.lbl  { font-size:10px; font-weight:500; letter-spacing:.06em; color:var(--text3); text-transform:uppercase; margin-bottom:3px; }
+.val  { font-family:'DM Mono',monospace; font-size:30px; line-height:1; color:var(--text); letter-spacing:-.02em; }
+.val.lg { font-size:40px; }
+.val.xl { font-size:56px; }
+.val.sm { font-size:20px; }
+.unit { font-size:10px; color:var(--text3); margin-top:2px; }
+
+/* ── Pills ── */
+.pill { display:inline-flex; align-items:center; gap:4px; padding:3px 9px; border-radius:999px; font-size:10px; font-weight:500; border:1px solid transparent; }
+.pill .pd { width:5px; height:5px; border-radius:50%; background:currentColor; }
+.pill.on   { background:rgba(74,222,128,.1);  border-color:rgba(74,222,128,.3);  color:var(--green); }
+.pill.off  { background:rgba(255,255,255,.05); border-color:rgba(255,255,255,.08); color:var(--text3); }
+.pill.warn { background:rgba(245,158,11,.1);  border-color:rgba(245,158,11,.3);  color:var(--amber); }
+.pill.err  { background:rgba(244,63,94,.1);   border-color:rgba(244,63,94,.3);   color:var(--red); animation:blink .8s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+/* ── Progress bars ── */
+.bar-track { height:4px; border-radius:999px; background:rgba(255,255,255,.07); overflow:hidden; margin-top:8px; }
+.bar-fill  { height:100%; border-radius:999px; transition:width .3s ease; }
+.bar-fill.purple { background:var(--accent-g); box-shadow:0 0 8px rgba(168,85,247,.5); }
+.bar-fill.green  { background:linear-gradient(90deg,#4ade80,#22d3ee); box-shadow:0 0 8px rgba(74,222,128,.4); }
+.bar-fill.amber  { background:linear-gradient(90deg,#f59e0b,#ef4444); box-shadow:0 0 8px rgba(245,158,11,.4); }
+
+/* ── G-force bar (horizontal, centred) ── */
+.gbar      { height:5px; border-radius:999px; background:rgba(255,255,255,.07); position:relative; overflow:hidden; }
+.gbar-fill { position:absolute; top:0; height:100%; border-radius:999px; background:var(--accent-g); transition:left .1s,width .1s; }
+.gbar-zero { position:absolute; top:-2px; left:50%; width:1px; height:9px; background:rgba(255,255,255,.18); }
+
+/* ── Control buttons ── */
+.cb { background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.09); border-radius:var(--radius-sm); color:var(--text2); font-family:'DM Sans',sans-serif; font-size:12px; font-weight:500; padding:11px 10px; cursor:pointer; transition:all .15s; text-align:left; display:flex; flex-direction:column; gap:3px; }
+.cb .ci { font-size:17px; }
+.cb:hover  { background:rgba(168,85,247,.12); border-color:rgba(168,85,247,.35); color:var(--text); }
+.cb:active { transform:scale(.97); }
+.cb.danger:hover { background:rgba(244,63,94,.1); border-color:rgba(244,63,94,.35); color:var(--red); }
+
+/* ── Compass ── */
+.compass { width:88px; height:88px; border-radius:50%; border:2px solid rgba(168,85,247,.2); position:relative; display:flex; align-items:center; justify-content:center; background:radial-gradient(circle, rgba(168,85,247,.06) 0%, transparent 70%); flex-shrink:0; }
+.compass::before { content:'N'; position:absolute; top:5px; left:50%; transform:translateX(-50%); font-size:9px; color:var(--accent); font-weight:600; }
+.cn { position:absolute; width:2px; height:36px; bottom:50%; left:50%; transform-origin:bottom center; margin-left:-1px; background:linear-gradient(0deg,transparent,var(--accent)); border-radius:2px; box-shadow:0 -2px 8px rgba(168,85,247,.5); transition:transform .5s ease; }
+
+/* ── EFI rows ── */
+.er  { display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px solid rgba(255,255,255,.05); }
+.er:last-child { border-bottom:none; }
+.ek  { font-size:11px; color:var(--text3); }
+.ev  { font-family:'DM Mono',monospace; font-size:12px; color:var(--text2); }
+
+/* ── SDR ── */
+.sdr-freq { font-family:'DM Mono',monospace; font-size:28px; color:var(--teal); text-shadow:0 0 18px rgba(45,212,191,.4); letter-spacing:.04em; }
+.sdb { flex:1; padding:7px 4px; border:1px solid rgba(45,212,191,.2); border-radius:var(--radius-sm); background:rgba(45,212,191,.04); color:rgba(45,212,191,.6); font-family:'DM Sans',sans-serif; font-size:10px; font-weight:500; cursor:pointer; transition:all .15s; }
+.sdb:hover { background:rgba(45,212,191,.12); color:var(--teal); border-color:var(--teal); }
+
+/* ── Speed (GPS page) ── */
+.speed-xl { font-family:'DM Mono',monospace; font-size:60px; font-weight:400; line-height:1; letter-spacing:-.03em; background:var(--accent-g); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+
+/* ── Divider ── */
+.divider { height:1px; background:rgba(255,255,255,.06); margin:8px 0; }
+
+/* ── Grid span helpers ── */
+.s2c { grid-column:span 2; }
+.s3c { grid-column:span 3; }
+.s2r { grid-row:span 2; }
+
+/* ── Page-specific grids ── */
+#page-sensors { grid-template-columns:1.1fr .75fr .75fr; grid-template-rows:1fr 1fr; gap:9px; }
+#page-lights  { grid-template-columns:1fr 1fr; grid-template-rows:auto 1fr; gap:9px; }
+#page-efi     { grid-template-columns:1.2fr 1fr; grid-template-rows:1fr 1fr; gap:9px; }
+#page-gps     { grid-template-columns:1.2fr 1fr; grid-template-rows:1fr 1fr; gap:9px; }
+#page-imu     { grid-template-columns:1fr 1fr 1fr; grid-template-rows:auto 1fr auto; gap:9px; }
+#page-sdr     { grid-template-columns:1fr 1fr; grid-template-rows:auto 1fr auto; gap:9px; }
