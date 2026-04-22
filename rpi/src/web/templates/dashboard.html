@@ -2,68 +2,308 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Miata Dash</title>
-    <style>
-        body { background: #111; color: #eee; font-family: monospace; padding: 2rem; }
-        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
-        .card { background: #222; border-radius: 8px; padding: 1rem; }
-        .label { font-size: 0.75rem; color: #888; }
-        .value { font-size: 2rem; font-weight: bold; }
-        .on { color: #4caf50; }
-        .off { color: #555; }
-    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/dashboard.css">
 </head>
 <body>
-<h2>🚗 Miata Dash</h2>
-<div class="grid">
-    <div class="card">
-        <div class="label">RPM</div>
-        <div class="value" id="rpm">—</div>
-    </div>
-    <div class="card">
-        <div class="label">Water Temp (°C)</div>
-        <div class="value" id="water_temp_c">—</div>
-    </div>
-    <div class="card">
-        <div class="label">Oil Pressure (bar)</div>
-        <div class="value" id="oil_pressure">—</div>
-    </div>
-    <div class="card">
-        <div class="label">Lights</div>
-        <div class="value" id="lights_on">—</div>
-    </div>
-    <div class="card">
-        <div class="label">GPS</div>
-        <div class="value" id="gps">—</div>
-    </div>
-    <div class="card">
-        <div class="label">G-Force (X / Y)</div>
-        <div class="value" id="imu">—</div>
-    </div>
-</div>
+<div id="app">
 
-<script>
-    async function poll() {
-        try {
-            const res = await fetch('/api/state');
-            const s = await res.json();
+    <!-- ── Top bar ── -->
+    <div id="topbar">
+        <div>
+            <div class="tb-title">Miata Dash</div>
+            <div class="tb-sub">NA · 1990 · B6ZE 1.6L</div>
+        </div>
+        <div class="tb-right">
+            <div class="tb-chip"><div class="dot" id="connDot"></div><span id="connLbl">Connecting…</span></div>
+            <div class="tb-chip"><div class="dot err" id="gpsDot"></div><span id="gpsLbl">No Fix</span></div>
+            <div id="clock">--:--</div>
+        </div>
+    </div>
 
-            document.getElementById('rpm').textContent = s.rpm;
-            document.getElementById('water_temp_c').textContent = s.water_temp_c + ' °C';
-            document.getElementById('oil_pressure').textContent = s.oil_pressure.toFixed(1) + ' bar';
-            document.getElementById('lights_on').className = 'value ' + (s.lights_on ? 'on' : 'off');
-            document.getElementById('lights_on').textContent = s.lights_on ? 'ON' : 'OFF';
-            document.getElementById('gps').textContent = s.gps_valid
-                ? `${s.gps_lat.toFixed(4)}, ${s.gps_lon.toFixed(4)}`
-                : 'NO FIX';
-            document.getElementById('imu').textContent = `${s.imu_x.toFixed(2)} / ${s.imu_y.toFixed(2)}`;
-        } catch (e) {
-            console.error('Poll failed:', e);
-        }
-    }
+    <!-- ── Nav tabs ── -->
+    <div id="navtabs">
+        <button class="tab active" onclick="showTab('sensors', this)">Sensors</button>
+        <button class="tab" onclick="showTab('lights',  this)">Lights</button>
+        <button class="tab" onclick="showTab('efi',     this)">EFI</button>
+        <button class="tab" onclick="showTab('gps',     this)">GPS</button>
+        <button class="tab" onclick="showTab('imu',     this)">IMU</button>
+        <button class="tab" onclick="showTab('sdr',     this)">SDR</button>
+    </div>
 
-    setInterval(poll, 100);
-    poll();
-</script>
+    <!-- ── Pages ── -->
+    <div id="content">
+
+        <!-- SENSORS -->
+        <div class="page active" id="page-sensors">
+
+            <div class="card s2r cp" style="display:flex;flex-direction:column;justify-content:space-between;">
+                <div>
+                    <div class="lbl">Engine Speed</div>
+                    <div class="val xl" id="rpm-big">0</div>
+                    <div class="unit">RPM</div>
+                </div>
+                <div>
+                    <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+                        <span style="font-size:9px;color:var(--text3)">IDLE</span>
+                        <span style="font-size:9px;color:var(--text3)">REDLINE 8k</span>
+                    </div>
+                    <div class="bar-track" style="height:7px"><div class="bar-fill purple" id="rpmBar" style="width:0%"></div></div>
+                    <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px;">
+                        <div class="pill off" id="pl-lights"><div class="pd"></div><span id="pl-lights-t">Lights Off</span></div>
+                        <div class="pill off" id="pl-beam"  ><div class="pd"></div><span id="pl-beam-t"  >Beam Off</span></div>
+                        <div class="pill off" id="pl-up"    ><div class="pd"></div><span id="pl-up-t"    >Lights Down</span></div>
+                        <div class="pill off" id="pl-brake" ><div class="pd"></div><span id="pl-brake-t" >Brake Off</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card cp">
+                <div class="lbl">Coolant Temp</div>
+                <div class="val" id="water-val">--</div>
+                <div class="unit">°C</div>
+                <div class="bar-track"><div class="bar-fill green" id="waterBar" style="width:0%"></div></div>
+                <div style="margin-top:8px"><div class="pill on" id="water-pill"><div class="pd"></div><span id="water-pill-t">Normal</span></div></div>
+            </div>
+
+            <div class="card cp">
+                <div class="lbl">Oil Pressure</div>
+                <div class="val" id="oil-val">--</div>
+                <div class="unit">bar</div>
+                <div class="bar-track"><div class="bar-fill green" id="oilBar" style="width:0%"></div></div>
+                <div style="margin-top:8px"><div class="pill on" id="oil-pill"><div class="pd"></div><span id="oil-pill-t">Good</span></div></div>
+            </div>
+
+            <div class="card cp">
+                <div class="lbl">G-Force</div>
+                <div style="display:flex;gap:10px;margin-top:3px">
+                    <div><div style="font-size:8px;color:var(--text3)">LONG</div><div class="val sm" id="s-gx">0.00</div></div>
+                    <div><div style="font-size:8px;color:var(--text3)">LAT</div> <div class="val sm" id="s-gy">0.00</div></div>
+                    <div><div style="font-size:8px;color:var(--text3)">VERT</div><div class="val sm" id="s-gz">0.00</div></div>
+                </div>
+                <div class="gbar" style="margin-top:9px"><div class="gbar-zero"></div><div class="gbar-fill" id="gBarLat" style="left:50%;width:0%"></div></div>
+                <div style="display:flex;justify-content:space-between;margin-top:2px">
+                    <span style="font-size:8px;color:var(--text3)">−3G</span>
+                    <span style="font-size:8px;color:var(--text3)">+3G</span>
+                </div>
+            </div>
+
+            <div class="card cp">
+                <div class="lbl">Position</div>
+                <div style="font-family:DM Mono,monospace;font-size:13px;color:var(--text);margin-top:3px" id="s-lat">--</div>
+                <div style="font-family:DM Mono,monospace;font-size:13px;color:var(--text)"                id="s-lon">--</div>
+                <div class="divider"></div>
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                    <div><div style="font-size:8px;color:var(--text3)">SPEED</div><div style="font-family:DM Mono,monospace;font-size:15px" id="s-spd">--</div></div>
+                    <div class="pill off" id="s-fix"><div class="pd"></div><span id="s-fix-t">No Fix</span></div>
+                </div>
+            </div>
+
+        </div><!-- /sensors -->
+
+        <!-- LIGHTS -->
+        <div class="page" id="page-lights">
+
+            <div class="card cp s2c">
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                    <div>
+                        <div class="lbl">Lighting Control</div>
+                        <div style="font-size:13px;font-weight:500;margin-top:1px">Relay Module · 6-channel</div>
+                    </div>
+                    <div style="display:flex;gap:6px">
+                        <div class="pill off" id="lc-l"><div class="pd"></div><span id="lc-l-t">Off</span></div>
+                        <div class="pill off" id="lc-b"><div class="pd"></div><span id="lc-b-t">Beam Off</span></div>
+                        <div class="pill off" id="lc-u"><div class="pd"></div><span id="lc-u-t">Down</span></div>
+                    </div>
+                </div>
+                <div id="cmdlog" style="font-size:10px;color:var(--text3);font-family:DM Mono,monospace;margin-top:5px;min-height:13px">Awaiting command…</div>
+            </div>
+
+            <div class="card cp" style="grid-row:2/4">
+                <div class="lbl" style="margin-bottom:9px">Headlights</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px">
+                    <button class="cb" onclick="LightsTab.send('LIGHTS_ON')">   <span class="ci">💡</span>Lights On</button>
+                    <button class="cb danger" onclick="LightsTab.send('LIGHTS_OFF')"> <span class="ci">🌑</span>Lights Off</button>
+                    <button class="cb" onclick="LightsTab.send('BEAM_ON')">     <span class="ci">🔦</span>High Beam On</button>
+                    <button class="cb danger" onclick="LightsTab.send('BEAM_OFF')">   <span class="ci">🔅</span>High Beam Off</button>
+                    <button class="cb" onclick="LightsTab.send('RETRACT_UP')">  <span class="ci">▲</span>Pop-ups Up</button>
+                    <button class="cb" onclick="LightsTab.send('RETRACT_DOWN')"><span class="ci">▼</span>Pop-ups Down</button>
+                </div>
+            </div>
+
+            <div class="card cp">
+                <div class="lbl" style="margin-bottom:9px">Accessories</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px">
+                    <button class="cb" onclick="LightsTab.send('INTERIOR_ON')"> <span class="ci">🏠</span>Interior On</button>
+                    <button class="cb danger" onclick="LightsTab.send('INTERIOR_OFF')"><span class="ci">🌙</span>Interior Off</button>
+                    <button class="cb" onclick="LightsTab.send('ACC_ON')">      <span class="ci">⚡</span>ACC Bus On</button>
+                    <button class="cb danger" onclick="LightsTab.send('ACC_OFF')">     <span class="ci">⭕</span>ACC Bus Off</button>
+                </div>
+            </div>
+
+        </div><!-- /lights -->
+
+        <!-- EFI -->
+        <div class="page" id="page-efi">
+
+            <div class="card s2r cp">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                    <div><div class="lbl">rusEFI ECU</div><div style="font-size:13px;font-weight:500">Serial / TunerStudio</div></div>
+                    <div class="pill err" id="ecuPill"><div class="pd"></div><span id="ecuPill-t">Disconnected</span></div>
+                </div>
+                <div class="divider"></div>
+                <div class="er"><span class="ek">RPM</span>                   <span class="ev" id="ef-rpm">--</span></div>
+                <div class="er"><span class="ek">AFR Target / Actual</span>   <span class="ev" id="ef-afr">-- / --</span></div>
+                <div class="er"><span class="ek">Ignition Advance</span>      <span class="ev" id="ef-ign">--°</span></div>
+                <div class="er"><span class="ek">MAP / TPS</span>             <span class="ev" id="ef-map">-- kPa / --%</span></div>
+                <div class="er"><span class="ek">CLT / IAT</span>             <span class="ev" id="ef-clt">-- / --°C</span></div>
+                <div class="er"><span class="ek">Battery Voltage</span>       <span class="ev" id="ef-vbat">--V</span></div>
+                <div class="er"><span class="ek">Injection Mode</span>        <span class="ev" id="ef-mode">--</span></div>
+            </div>
+
+            <div class="card cp">
+                <div class="lbl" style="margin-bottom:10px">Connection</div>
+                <div style="display:flex;flex-direction:column;gap:7px">
+                    <button class="cb" onclick="EfiTab.connect()"    style="width:100%">⚙  Connect ECU</button>
+                    <button class="cb danger" onclick="EfiTab.disconnect()" style="width:100%">✕  Disconnect</button>
+                </div>
+                <div class="divider"></div>
+                <div style="font-size:10px;color:var(--text3);line-height:2">Port: /dev/ttyUSB0<br>Baud: 115200<br>Protocol: TS Binary v2</div>
+            </div>
+
+            <div class="card-accent card cp" style="display:flex;flex-direction:column;justify-content:center">
+                <div class="lbl" style="color:rgba(255,255,255,.6)">Fuel System</div>
+                <div style="font-family:DM Mono,monospace;font-size:22px;color:#fff;margin-top:4px">Sequential</div>
+                <div style="font-size:10px;color:rgba(255,255,255,.5);margin-top:2px">4-cylinder · MPFI</div>
+            </div>
+
+        </div><!-- /efi -->
+
+        <!-- GPS -->
+        <div class="page" id="page-gps">
+
+            <div class="card s2r cp" style="display:flex;flex-direction:column;justify-content:space-between">
+                <div>
+                    <div class="lbl">Vehicle Speed</div>
+                    <div class="speed-xl" id="gps-spd-big">0</div>
+                    <div class="unit">km / h</div>
+                </div>
+                <div>
+                    <div class="divider"></div>
+                    <div class="er"><span class="ek">Latitude</span>  <span class="ev" id="gps-lat2">--</span></div>
+                    <div class="er"><span class="ek">Longitude</span> <span class="ev" id="gps-lon2">--</span></div>
+                    <div class="er"><span class="ek">Altitude</span>  <span class="ev" id="gps-alt2">-- m</span></div>
+                    <div class="er"><span class="ek">Satellites</span><span class="ev" id="gps-sats2">0</span></div>
+                    <div class="er"><span class="ek">Status</span>
+                        <div class="pill off" id="gps-fix-pill"><div class="pd"></div><span id="gps-fix-t">No Fix</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card cp" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px">
+                <div class="lbl">Heading</div>
+                <div class="compass"><div class="cn" id="compassNeedle"></div></div>
+                <div style="font-family:DM Mono,monospace;font-size:20px" id="gps-track">---°</div>
+            </div>
+
+            <div class="card cp" style="display:flex;flex-direction:column;justify-content:center">
+                <div class="lbl">Last Fix</div>
+                <div style="font-family:DM Mono,monospace;font-size:14px;color:var(--text2);margin-top:4px" id="gps-time">--:--:--</div>
+                <div class="divider"></div>
+                <div class="lbl">Session Distance</div>
+                <div style="font-family:DM Mono,monospace;font-size:20px;margin-top:3px" id="gps-dist">0.0 km</div>
+            </div>
+
+        </div><!-- /gps -->
+
+        <!-- IMU -->
+        <div class="page" id="page-imu">
+
+            <div class="card cp">
+                <div class="lbl">Longitudinal G</div>
+                <div class="val lg" id="imu-x-big" style="margin-top:3px">0.00</div>
+                <div class="unit">G</div>
+                <div class="gbar" style="margin-top:9px"><div class="gbar-zero"></div><div class="gbar-fill" id="ib-x" style="left:50%;width:0%"></div></div>
+            </div>
+            <div class="card cp">
+                <div class="lbl">Lateral G</div>
+                <div class="val lg" id="imu-y-big" style="margin-top:3px">0.00</div>
+                <div class="unit">G</div>
+                <div class="gbar" style="margin-top:9px"><div class="gbar-zero"></div><div class="gbar-fill" id="ib-y" style="left:50%;width:0%"></div></div>
+            </div>
+            <div class="card cp">
+                <div class="lbl">Vertical G</div>
+                <div class="val lg" id="imu-z-big" style="margin-top:3px">0.00</div>
+                <div class="unit">G</div>
+                <div class="gbar" style="margin-top:9px"><div class="gbar-zero"></div><div class="gbar-fill" id="ib-z" style="left:50%;width:0%"></div></div>
+            </div>
+
+            <div class="card s2c" style="padding:12px;display:flex;flex-direction:column">
+                <div class="lbl" style="margin-bottom:7px">G-Force Plot</div>
+                <canvas id="gCross" width="300" height="140" style="width:100%;flex:1;max-height:150px;border-radius:10px;background:rgba(0,0,0,.25)"></canvas>
+            </div>
+
+            <div class="card cp" style="display:flex;flex-direction:column;justify-content:space-between">
+                <div class="lbl">Peak G</div>
+                <div style="display:flex;gap:14px;margin-top:6px">
+                    <div>
+                        <div style="font-size:9px;color:var(--text3)">LATERAL</div>
+                        <div style="font-family:DM Mono,monospace;font-size:22px;color:var(--amber);text-shadow:0 0 10px rgba(245,158,11,.3)" id="peak-lat">0.00</div>
+                    </div>
+                    <div>
+                        <div style="font-size:9px;color:var(--text3)">LONG</div>
+                        <div style="font-family:DM Mono,monospace;font-size:22px;color:var(--amber);text-shadow:0 0 10px rgba(245,158,11,.3)" id="peak-long">0.00</div>
+                    </div>
+                </div>
+                <button onclick="ImuTab.resetPeaks()" style="margin-top:8px;padding:6px 12px;border:1px solid rgba(255,255,255,.1);border-radius:999px;background:transparent;color:var(--text3);font-family:DM Sans,sans-serif;font-size:11px;cursor:pointer">Reset peaks</button>
+            </div>
+
+        </div><!-- /imu -->
+
+        <!-- SDR -->
+        <div class="page" id="page-sdr">
+
+            <div class="card cp s2c">
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                    <div><div class="lbl">RTL-SDR Receiver</div><div class="sdr-freq" id="sdr-freq-disp">88.000 MHz</div></div>
+                    <div class="pill warn"><div class="pd"></div>USB Dongle Required</div>
+                </div>
+            </div>
+
+            <div class="card" style="padding:12px;grid-row:2/4">
+                <div class="lbl" style="margin-bottom:7px">Spectrum</div>
+                <canvas id="sdrCanvas" width="360" height="110" style="width:100%;border-radius:9px;background:rgba(0,0,0,.3)"></canvas>
+                <div style="display:flex;gap:5px;margin-top:9px">
+                    <button class="sdb" onclick="SdrTab.adjustFreq(-1)">  −1M</button>
+                    <button class="sdb" onclick="SdrTab.adjustFreq(-.1)">−100k</button>
+                    <button class="sdb" onclick="SdrTab.adjustFreq(.1)"> +100k</button>
+                    <button class="sdb" onclick="SdrTab.adjustFreq(1)">   +1M</button>
+                </div>
+            </div>
+
+            <div class="card cp">
+                <div class="lbl" style="margin-bottom:9px">Presets</div>
+                <div style="display:flex;flex-direction:column;gap:5px">
+                    <button class="cb" onclick="SdrTab.setFreq(88.0)"   style="flex-direction:row;align-items:center;gap:8px;padding:8px 10px"><span style="color:var(--text3);font-size:10px;min-width:55px;font-family:DM Mono,monospace">88.0</span>FM Radio</button>
+                    <button class="cb" onclick="SdrTab.setFreq(121.5)"  style="flex-direction:row;align-items:center;gap:8px;padding:8px 10px"><span style="color:var(--accent);font-size:10px;min-width:55px;font-family:DM Mono,monospace">121.5</span>Aviation Guard</button>
+                    <button class="cb" onclick="SdrTab.setFreq(156.8)"  style="flex-direction:row;align-items:center;gap:8px;padding:8px 10px"><span style="color:var(--teal);font-size:10px;min-width:55px;font-family:DM Mono,monospace">156.8</span>Marine Ch 16</button>
+                    <button class="cb" onclick="SdrTab.setFreq(433.92)" style="flex-direction:row;align-items:center;gap:8px;padding:8px 10px"><span style="color:var(--text3);font-size:10px;min-width:55px;font-family:DM Mono,monospace">433.9</span>ISM / Keyfobs</button>
+                </div>
+            </div>
+
+            <div class="card cp">
+                <div class="lbl" style="margin-bottom:7px">Device</div>
+                <div style="font-size:11px;color:var(--text3);line-height:2">RTL2832U / R820T2<br>Sample: 2.048 MSPS<br>Gain: Auto<br>PPM: 0</div>
+            </div>
+
+        </div><!-- /sdr -->
+
+    </div><!-- /content -->
+</div><!-- /app -->
+
+<script type="module" src="/static/js/main.js"></script>
 </body>
 </html>

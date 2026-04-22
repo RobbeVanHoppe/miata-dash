@@ -2,7 +2,7 @@ import time
 import threading
 from typing import Dict
 
-from src.bus.message import Message, MESSAGE_SIZE, MessageNode
+from src.bus.message import Message, MESSAGE_SIZE, MessageNode, MessageType
 from src.handlers.base_handler import BaseHandler
 from src.car_state import SharedState
 
@@ -19,10 +19,6 @@ POLL_INTERVAL = 0.1  # 100ms
 
 class I2CMaster:
     def __init__(self, state: SharedState, bus=None):
-        """
-        state: SharedState instance
-        bus: smbus2.SMBus instance (or mock). If None, a real bus is opened.
-        """
         self._state = state
         self._handlers: Dict[MessageNode, BaseHandler] = {}
         self._bus = bus
@@ -35,12 +31,12 @@ class I2CMaster:
     def start(self):
         if self._bus is None:
             import os
-            if os.environ.get("MIATA_ENV") == "mock":
+            if os.environ.get('MIATA_ENV') == 'mock':
                 from src.bus.mock_i2c import MockBus
                 self._bus = MockBus()
             else:
                 import smbus2
-                self._bus = smbus2.SMBus(1)  # /dev/i2c-1
+                self._bus = smbus2.SMBus(1)
 
         self._running = True
         self._thread = threading.Thread(target=self._loop, daemon=True)
@@ -50,6 +46,17 @@ class I2CMaster:
         self._running = False
         if self._thread:
             self._thread.join()
+
+    def send(self, node: MessageNode, message: Message):
+        """
+        Write a Message struct to an I2C node.
+        Called from the Flask layer to forward commands (e.g. LIGHTS_ON).
+        """
+        addr = NODE_ADDRESSES.get(node)
+        if addr is None:
+            raise ValueError(f'No I2C address for node {node}')
+        raw = message.to_bytes()
+        self._bus.write_i2c_block_data(addr, 0, list(raw))
 
     def _loop(self):
         while self._running:
@@ -66,4 +73,4 @@ class I2CMaster:
             message = Message.from_bytes(bytes(raw))
             handler.handle_message(message, self._state)
         except Exception as e:
-            print(f"[I2CMaster] Error polling {node.name} @ 0x{addr:02X}: {e}")
+            print(f'[I2CMaster] Error polling {node.name} @ 0x{addr:02X}: {e}')
