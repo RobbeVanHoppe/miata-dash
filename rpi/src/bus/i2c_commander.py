@@ -26,7 +26,7 @@ class I2CCommander:
         self._lock = threading.Lock()
 
     def start(self, bus=None):
-        """Attach to an already-opened smbus2 instance or open one."""
+        self.one_ = """Attach to an already-opened smbus2 instance or open one."""
         if bus is not None:
             self._bus = bus
         elif self._bus is None:

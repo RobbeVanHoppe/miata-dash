@@ -24,6 +24,7 @@ class CarState:
     gps_speed: float = 0.0
     gps_alt: float = 0.0
     gps_sats: int = 0
+    avg_btn_event: bool = False  # True for one poll cycle when the physical button fires
 
     # IMU
     imu_x: float = 0.0
