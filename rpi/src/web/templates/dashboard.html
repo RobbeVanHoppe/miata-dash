@@ -187,7 +187,18 @@
         <!-- GPS -->
         <div class="page" id="page-gps">
 
-            <div class="card s2r cp" style="display:flex;flex-direction:column;justify-content:space-between">
+            <div class="card s3c cp" style="display:flex;flex-direction:column;justify-content:space-between">
+                <div class="map-lbl">Live Map</div>
+                <div id="map"></div>
+            </div>
+
+            <div class="card cp" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px">
+                <div class="lbl">Heading</div>
+                <div class="compass"><div class="cn" id="compassNeedle"></div></div>
+                <div style="font-family:DM Mono,monospace;font-size:20px" id="gps-track">---°</div>
+            </div>
+
+            <div class="card cp" style="display:flex;flex-direction:column;justify-content:center">
                 <div>
                     <div class="lbl">Vehicle Speed</div>
                     <div class="speed-xl" id="gps-spd-big">0</div>
@@ -205,23 +216,12 @@
                 </div>
             </div>
 
-            <div class="card cp" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px">
-                <div class="lbl">Heading</div>
-                <div class="compass"><div class="cn" id="compassNeedle"></div></div>
-                <div style="font-family:DM Mono,monospace;font-size:20px" id="gps-track">---°</div>
-            </div>
-
-            <div class="card cp" style="display:flex;flex-direction:column;justify-content:center">
+            <div class="card cp" style="display:flex;flex-direction:column;justify-content:space-between">
                 <div class="lbl">Last Fix</div>
                 <div style="font-family:DM Mono,monospace;font-size:14px;color:var(--text2);margin-top:4px" id="gps-time">--:--:--</div>
                 <div class="divider"></div>
                 <div class="lbl">Session Distance</div>
                 <div style="font-family:DM Mono,monospace;font-size:20px;margin-top:3px" id="gps-dist">0.0 km</div>
-            </div>
-
-            <div class="card s2r map-card">
-                <div class="map-lbl">Live Map</div>
-                <div id="map"></div>
             </div>
 
             <!-- Avg speed check overlay — shown when button is active -->
