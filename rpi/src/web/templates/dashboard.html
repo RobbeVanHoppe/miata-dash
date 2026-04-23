@@ -187,9 +187,19 @@
         <!-- GPS -->
         <div class="page" id="page-gps">
 
-            <div class="card s3c cp" style="display:flex;flex-direction:column;justify-content:space-between">
+            <div class="card s3c cp" style="display:flex;flex-direction:column;justify-content:space-between;position:relative">
                 <div class="map-lbl">Live Map</div>
                 <div id="map"></div>
+                <button id="gps-recenter-btn" class="recenter-btn active" title="Recenter">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <circle cx="12" cy="12" r="8"></circle>
+                        <line x1="12" y1="2" x2="12" y2="5"></line>
+                        <line x1="12" y1="19" x2="12" y2="22"></line>
+                        <line x1="2" y1="12" x2="5" y2="12"></line>
+                        <line x1="19" y1="12" x2="22" y2="12"></line>
+                    </svg>
+                </button>
             </div>
 
             <div class="card cp" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px">

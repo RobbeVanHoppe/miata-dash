@@ -12,6 +12,12 @@ let _polyline = null;
 let _routePoints = [];
 let _mapReady = false;
 
+// Follow mode
+let _followMode = true;
+let _lastKnownLat = null;
+let _lastKnownLon = null;
+let _programmaticMove = false;
+
 // Avg speed check
 let _avgActive = false;
 let _avgStartTime = null;
@@ -19,6 +25,7 @@ let _avgSpeedSamples = [];
 
 export function init() {
     _initMap();
+    _initRecenterBtn();
 }
 
 export function onActivate() {
@@ -90,18 +97,52 @@ function _initMap() {
     });
     _marker   = L.marker([50.85, 4.35], { icon }).addTo(_map);
     _polyline = L.polyline([], { color: '#a855f7', weight: 3, opacity: 0.75 }).addTo(_map);
+
+    // When dragging the map, stop recentering
+    _map.on('dragstart', () => {
+        if (!_programmaticMove) {
+            _setFollowMode(false);
+        }
+    });
+}
+
+function _initRecenterBtn() {
+    const btn = document.getElementById('gps-recenter-btn');
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+        _setFollowMode(true);
+        if (_lastKnownLat !== null && _lastKnownLon !== null) {
+            _programmaticMove = true;
+            _map.setView([_lastKnownLat, _lastKnownLon], _map.getZoom());
+            setTimeout(() => { _programmaticMove = false; }, 50);
+        }
+    });
+}
+
+function _setFollowMode(on) {
+    _followMode = on;
+    const btn = document.getElementById('gps-recenter-btn');
+    if (btn) btn.classList.toggle('active', !on);
 }
 
 function _updateMap(lat, lon) {
     if (!_map) return;
+    _lastKnownLat = lat;
+    _lastKnownLon = lon;
+
     _marker.setLatLng([lat, lon]);
     _routePoints.push([lat, lon]);
     _polyline.setLatLngs(_routePoints);
+
     if (!_mapReady) {
+        _programmaticMove = true;
         _map.setView([lat, lon], 15);
+        setTimeout(() => { _programmaticMove = false; }, 50);
         _mapReady = true;
-    } else {
+    } else if (_followMode) {
+        _programmaticMove = true;
         _map.panTo([lat, lon]);
+        setTimeout(() => { _programmaticMove = false; }, 50);
     }
 }
 
