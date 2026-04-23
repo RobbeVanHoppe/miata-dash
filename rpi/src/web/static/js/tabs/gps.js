@@ -73,7 +73,7 @@ export function update(state) {
 // ── Private ───────────────────────────────────────────────────────────────────
 
 function _initMap() {
-    _map = L.map('map', { zoomControl: false, attributionControl: true })
+    _map = L.map('map', { zoomControl: true, attributionControl: true })
              .setView([50.85, 4.35], 13);
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
