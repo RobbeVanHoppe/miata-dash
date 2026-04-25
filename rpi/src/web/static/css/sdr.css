@@ -1,0 +1,573 @@
+/* =============================================================================
+   sdr.css — SDR tab styles for 1024×760 touch display
+   Add to dashboard.css (or @import from it)
+   ============================================================================= */
+
+/* ── Page layout override for SDR ──────────────────────────────────────────── */
+
+#page-sdr {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    overflow: hidden;
+}
+
+/* Full-width header */
+.sdr-header {
+    flex-shrink: 0;
+}
+
+.sdr-header-inner {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.sdr-freq-block {
+    min-width: 220px;
+}
+
+.sdr-freq-big {
+    font-family: 'DM Mono', monospace;
+    font-size: 38px;
+    line-height: 1;
+    letter-spacing: .04em;
+    color: var(--teal);
+    text-shadow: 0 0 24px rgba(45, 212, 191, 0.4);
+}
+
+.sdr-mode-label {
+    font-size: 12px;
+    color: var(--text3);
+    margin-top: 3px;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+/* Frequency nudge row */
+.sdr-nudge-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+    flex: 1;
+}
+
+.nudge-btn {
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 10px;
+    color: var(--text2);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    padding: 10px 18px;
+    cursor: pointer;
+    transition: all .15s;
+    min-height: 48px;    /* touch target */
+    min-width:  64px;
+    text-align: center;
+}
+
+.nudge-btn:hover  { background: rgba(45,212,191,.12); border-color: var(--teal); color: var(--teal); }
+.nudge-btn:active { transform: scale(.96); }
+
+.sdr-manual-wrap {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+.sdr-manual-input {
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 10px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    width: 130px;
+    min-height: 48px;
+    outline: none;
+    transition: border-color .15s;
+}
+
+.sdr-manual-input:focus {
+    border-color: rgba(45,212,191,.5);
+    box-shadow: 0 0 0 2px rgba(45,212,191,.1);
+}
+
+/* Status + start/stop */
+.sdr-status-block {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    margin-left: auto;
+}
+
+.sdr-action-btn {
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 10px;
+    color: var(--text2);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 10px 20px;
+    min-height: 48px;
+    min-width: 84px;
+    cursor: pointer;
+    transition: all .15s;
+}
+
+.sdr-action-btn:hover       { background: rgba(45,212,191,.12); border-color: var(--teal); color: var(--teal); }
+.sdr-action-btn.danger:hover{ background: rgba(244,63,94,.1);  border-color: var(--red);  color: var(--red); }
+.sdr-action-btn:active      { transform: scale(.97); }
+.sdr-action-btn:disabled    { opacity: .4; pointer-events: none; }
+
+/* ── 3-column body ─────────────────────────────────────────────────────────── */
+
+.sdr-body {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 9px;
+    flex: 1;
+    min-height: 0;    /* required for child overflow:hidden to work */
+}
+
+/* ── Spectrum / waterfall column ───────────────────────────────────────────── */
+
+.sdr-viz-card {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* ── Controls column ───────────────────────────────────────────────────────── */
+
+.sdr-controls-card {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Mode grid — 3 tall touch-friendly buttons */
+.sdr-mode-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.sdr-mode-btn {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255,255,255,.05);
+    border: 1px solid rgba(255,255,255,.09);
+    border-radius: 12px;
+    padding: 13px 14px;
+    min-height: 52px;
+    cursor: pointer;
+    transition: all .15s;
+    text-align: left;
+}
+
+.sdr-mode-btn .mode-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text2);
+}
+
+.sdr-mode-btn .mode-sub {
+    font-size: 10px;
+    color: var(--text3);
+    font-family: 'DM Mono', monospace;
+}
+
+.sdr-mode-btn:hover {
+    background: rgba(45,212,191,.08);
+    border-color: rgba(45,212,191,.3);
+}
+
+.sdr-mode-btn.active {
+    background: rgba(45,212,191,.14);
+    border-color: var(--teal);
+}
+
+.sdr-mode-btn.active .mode-name { color: var(--teal); }
+
+/* Squelch slider */
+.sdr-sq-slider {
+    width: 100%;
+    margin-top: 8px;
+    accent-color: var(--teal);
+    height: 24px;      /* larger touch target */
+    cursor: pointer;
+}
+
+.sdr-sq-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 3px;
+    font-size: 9px;
+    color: var(--text3);
+}
+
+/* Device info */
+.sdr-device-info {
+    font-size: 11px;
+    color: var(--text3);
+    line-height: 2;
+    font-family: 'DM Mono', monospace;
+}
+
+/* ── Preset panel ──────────────────────────────────────────────────────────── */
+
+.sdr-preset-card {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 0;
+}
+
+/* Search bar */
+.sdr-search-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px 8px;
+    border-bottom: 1px solid rgba(255,255,255,.06);
+    flex-shrink: 0;
+}
+
+.sdr-search-icon {
+    font-size: 16px;
+    color: var(--text3);
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.sdr-search-input {
+    flex: 1;
+    background: rgba(255,255,255,.05);
+    border: 1px solid rgba(255,255,255,.09);
+    border-radius: 8px;
+    padding: 8px 10px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    outline: none;
+    min-height: 40px;
+}
+
+.sdr-search-input:focus { border-color: rgba(45,212,191,.4); }
+
+.sdr-search-clear {
+    background: none;
+    border: none;
+    color: var(--text3);
+    font-size: 14px;
+    cursor: pointer;
+    padding: 8px;
+    min-width: 36px;
+    min-height: 36px;
+    border-radius: 6px;
+}
+
+.sdr-search-clear:hover { color: var(--text2); background: rgba(255,255,255,.06); }
+
+/* Scrollable list */
+.sdr-preset-list {
+    flex: 1;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;   /* momentum scroll on iOS/WebKit */
+    overscroll-behavior: contain;        /* prevent page bounce */
+    padding: 4px 0;
+}
+
+/* Group header */
+.preset-group-header {
+    padding: 10px 14px 5px;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--text3);
+    position: sticky;
+    top: 0;
+    background: rgba(14,11,26,.92);
+    backdrop-filter: blur(8px);
+    z-index: 1;
+    border-bottom: 1px solid rgba(255,255,255,.04);
+}
+
+/* Preset row — minimum 52px touch target */
+.preset-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border-bottom: 1px solid rgba(255,255,255,.04);
+    cursor: pointer;
+    transition: background .12s;
+    position: relative;
+    min-height: 52px;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+}
+
+.preset-row:hover  { background: rgba(45,212,191,.06); }
+.preset-row:active { background: rgba(45,212,191,.12); }
+
+.preset-freq {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--teal);
+    min-width: 64px;
+    flex-shrink: 0;
+}
+
+.preset-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.preset-label {
+    font-size: 13px;
+    color: var(--text2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.preset-meta {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    margin-top: 2px;
+}
+
+.preset-sq {
+    font-size: 9px;
+    color: var(--text3);
+    font-family: 'DM Mono', monospace;
+}
+
+.preset-custom-badge {
+    font-size: 9px;
+    color: var(--accent);
+    opacity: .7;
+}
+
+.preset-tune-arrow {
+    font-size: 11px;
+    color: var(--text3);
+    flex-shrink: 0;
+    transition: color .15s;
+}
+
+.preset-row:hover .preset-tune-arrow { color: var(--teal); }
+
+/* Delete button — appears on long-press */
+.preset-delete-btn {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(244,63,94,.15);
+    border: 1px solid rgba(244,63,94,.4);
+    border-radius: 8px;
+    color: var(--red);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    padding: 7px 14px;
+    min-height: 38px;
+    cursor: pointer;
+    animation: slideInRight .15s ease;
+    z-index: 2;
+}
+
+@keyframes slideInRight {
+    from { opacity: 0; transform: translateY(-50%) translateX(8px); }
+    to   { opacity: 1; transform: translateY(-50%) translateX(0); }
+}
+
+/* Empty / loading state */
+.preset-empty {
+    padding: 24px 14px;
+    font-size: 12px;
+    color: var(--text3);
+    text-align: center;
+    font-style: italic;
+}
+
+/* Save button pinned at bottom */
+.sdr-preset-footer {
+    flex-shrink: 0;
+    padding: 10px 12px;
+    border-top: 1px solid rgba(255,255,255,.07);
+}
+
+.sdr-save-btn {
+    width: 100%;
+    background: rgba(168,85,247,.12);
+    border: 1px solid rgba(168,85,247,.35);
+    border-radius: 12px;
+    color: var(--accent);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 14px;
+    min-height: 52px;
+    cursor: pointer;
+    transition: all .15s;
+    letter-spacing: .01em;
+}
+
+.sdr-save-btn:hover  { background: rgba(168,85,247,.2); border-color: var(--accent); }
+.sdr-save-btn:active { transform: scale(.98); }
+
+/* ── Add-preset bottom sheet ───────────────────────────────────────────────── */
+
+.sdr-sheet-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.6);
+    backdrop-filter: blur(6px);
+    z-index: 100;
+    display: flex;
+    align-items: flex-end;
+    /* Hidden by default */
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .25s;
+}
+
+.sdr-sheet-backdrop.open {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.sdr-sheet {
+    width: 100%;
+    background: #17122b;
+    border-top: 1px solid rgba(168,85,247,.25);
+    border-radius: 20px 20px 0 0;
+    padding: 12px 24px 32px;
+    transform: translateY(100%);
+    transition: transform .3s cubic-bezier(.32,0,.16,1);
+    box-shadow: 0 -20px 60px rgba(0,0,0,.5);
+}
+
+.sdr-sheet-backdrop.open .sdr-sheet {
+    transform: translateY(0);
+}
+
+.sdr-sheet-handle {
+    width: 40px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255,255,255,.15);
+    margin: 0 auto 16px;
+}
+
+.sdr-sheet-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 18px;
+}
+
+.sdr-sheet-close {
+    background: rgba(255,255,255,.07);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    color: var(--text3);
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all .15s;
+}
+
+.sdr-sheet-close:hover { background: rgba(255,255,255,.12); color: var(--text); }
+
+/* Band quick-pick buttons */
+.sdr-sheet-bands {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 7px;
+}
+
+.sheet-band-btn {
+    background: rgba(255,255,255,.05);
+    border: 1px solid rgba(255,255,255,.09);
+    border-radius: 10px;
+    color: var(--text2);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    padding: 12px 8px;
+    min-height: 48px;
+    cursor: pointer;
+    transition: all .15s;
+}
+
+.sheet-band-btn:hover  { background: rgba(168,85,247,.1); border-color: rgba(168,85,247,.35); }
+.sheet-band-btn.active {
+    background: rgba(168,85,247,.18);
+    border-color: var(--accent);
+    color: var(--accent);
+    font-weight: 500;
+}
+
+/* Name input */
+.sdr-sheet-name-row {
+    display: flex;
+    gap: 8px;
+}
+
+.sdr-sheet-input {
+    flex: 1;
+    background: rgba(255,255,255,.07);
+    border: 1px solid rgba(255,255,255,.14);
+    border-radius: 12px;
+    padding: 14px 16px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    min-height: 52px;
+    outline: none;
+    transition: border-color .15s;
+}
+
+.sdr-sheet-input:focus {
+    border-color: rgba(168,85,247,.5);
+    box-shadow: 0 0 0 3px rgba(168,85,247,.1);
+}
+
+/* Save button */
+.sdr-sheet-save {
+    width: 100%;
+    margin-top: 18px;
+    background: var(--accent-g);
+    border: none;
+    border-radius: 14px;
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    padding: 16px;
+    min-height: 58px;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(168,85,247,.4);
+    transition: all .15s;
+    letter-spacing: .01em;
+}
+
+.sdr-sheet-save:hover  { box-shadow: 0 6px 28px rgba(168,85,247,.55); transform: translateY(-1px); }
+.sdr-sheet-save:active { transform: scale(.98); box-shadow: none; }

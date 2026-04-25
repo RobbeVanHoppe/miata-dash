@@ -8,9 +8,9 @@ class MockBus:
     """Simulates Arduino I2C responses for local development and testing."""
 
     MOCK_PAYLOADS = {
-        0x11: "1,0,1,1500,88,32",
-        0x10: "51.5074,-0.1278,60,8",
-        0x13: "0.02,0.98,0.15",
+        0x11: "0,0,1,850,33,32",
+        0x10: "51.4229, 5.4926,0,1",
+        0x13: "0.00,0.00,0.00",
     }
 
     # Tracks the last command written — useful for tests
