@@ -126,6 +126,26 @@ body::before {
 .sdb { flex:1; padding:7px 4px; border:1px solid rgba(45,212,191,.2); border-radius:var(--radius-sm); background:rgba(45,212,191,.04); color:rgba(45,212,191,.6); font-family:'DM Sans',sans-serif; font-size:10px; font-weight:500; cursor:pointer; transition:all .15s; }
 .sdb:hover { background:rgba(45,212,191,.12); color:var(--teal); border-color:var(--teal); }
 
+/* SDR mode buttons — active state mirrors the .tab.active gradient */
+.sdr-mode-btn.active {
+    background: rgba(45, 212, 191, 0.15);
+    border-color: var(--teal);
+    color: var(--teal);
+}
+
+/* Squelch slider thumb styling (webkit) */
+#sdrSqSlider::-webkit-slider-thumb {
+    width: 14px;
+    height: 14px;
+}
+
+/* Manual freq input focus */
+#sdrManualFreq:focus {
+    border-color: rgba(45, 212, 191, 0.5);
+    box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.1);
+}
+
+
 /* ── Speed (GPS page) ── */
 .speed-xl { font-family:'DM Mono',monospace; font-size:60px; font-weight:400; line-height:1; letter-spacing:-.03em; background:var(--accent-g); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
 
@@ -143,7 +163,7 @@ body::before {
 #page-efi     { grid-template-columns:1.2fr 1fr; grid-template-rows:1fr 1fr; gap:9px; }
 #page-gps     { grid-template-columns:1fr 0.72fr 1.5fr; grid-template-rows:1fr 1fr; gap:9px; position:relative; }
 #page-imu     { grid-template-columns:1fr 1fr 1fr; grid-template-rows:auto 1fr auto; gap:9px; }
-#page-sdr     { grid-template-columns:1fr 1fr; grid-template-rows:auto 1fr auto; gap:9px; }
+/*#page-sdr     { grid-template-columns:1fr 1fr; grid-template-rows:auto 1fr auto; gap:9px; }*/
 
 /* ── Leaflet map card ── */
 .map-card { padding:0; overflow:hidden; }

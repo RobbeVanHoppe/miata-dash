@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/dashboard.css">
+    <link rel="stylesheet" href="/static/css/sdr.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 </head>
@@ -293,45 +294,190 @@
 
         </div><!-- /imu -->
 
-        <!-- SDR -->
+        <!-- SDR
+              3-column layout for 1024×760:
+    Col 1 (flex 2): spectrum + waterfall canvases
+    Col 2 (flex 1): mode / squelch / freq controls
+    Col 3 (flex 1): scrollable preset panel
+
+  Bottom sheet: slides up from bottom when "+ Save Preset" is tapped.
+-->
+
         <div class="page" id="page-sdr">
 
-            <div class="card cp s2c">
-                <div style="display:flex;justify-content:space-between;align-items:center">
-                    <div><div class="lbl">RTL-SDR Receiver</div><div class="sdr-freq" id="sdr-freq-disp">88.000 MHz</div></div>
-                    <div class="pill warn"><div class="pd"></div>USB Dongle Required</div>
+            <!-- ── Header (full width) ── -->
+            <div class="card cp sdr-header">
+                <div class="sdr-header-inner">
+                    <div class="sdr-freq-block">
+                        <div class="lbl">RTL-SDR</div>
+                        <div class="sdr-freq-big" id="sdrFreqDisp">88.000 MHz</div>
+                        <div class="sdr-mode-label" id="sdrModeDisp">Wide FM</div>
+                    </div>
+
+                    <div class="sdr-nudge-row">
+                        <button class="nudge-btn" onclick="SdrTab.adjustFreq(-1)">−1M</button>
+                        <button class="nudge-btn" onclick="SdrTab.adjustFreq(-.1)">−100k</button>
+                        <button class="nudge-btn" onclick="SdrTab.adjustFreq(.1)">+100k</button>
+                        <button class="nudge-btn" onclick="SdrTab.adjustFreq(1)">+1M</button>
+                        <div class="sdr-manual-wrap">
+                            <input id="sdrManualFreq" type="number" step="0.001"
+                                   placeholder="MHz" class="sdr-manual-input" />
+                            <button class="nudge-btn" onclick="SdrTab.tuneManual()">Go</button>
+                        </div>
+                    </div>
+
+                    <div class="sdr-status-block">
+                        <div style="display:flex;gap:7px;margin-bottom:8px">
+                            <div class="pill off" id="sdrRunPill"><div class="pd"></div><span id="sdrRunPill-t">Stopped</span></div>
+                            <div class="pill off" id="sdrWsPill"><div class="pd"></div><span id="sdrWsPill-t">Offline</span></div>
+                        </div>
+                        <div style="display:flex;gap:6px">
+                            <button id="sdrStartBtn" class="sdr-action-btn" onclick="SdrTab.start()">▶ Start</button>
+                            <button class="sdr-action-btn danger"            onclick="SdrTab.stop()">■ Stop</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="card" style="padding:12px;grid-row:2/4">
-                <div class="lbl" style="margin-bottom:7px">Spectrum</div>
-                <canvas id="sdrCanvas" width="360" height="110" style="width:100%;border-radius:9px;background:rgba(0,0,0,.3)"></canvas>
-                <div style="display:flex;gap:5px;margin-top:9px">
-                    <button class="sdb" onclick="SdrTab.adjustFreq(-1)">  −1M</button>
-                    <button class="sdb" onclick="SdrTab.adjustFreq(-.1)">−100k</button>
-                    <button class="sdb" onclick="SdrTab.adjustFreq(.1)"> +100k</button>
-                    <button class="sdb" onclick="SdrTab.adjustFreq(1)">   +1M</button>
+            <!-- ── Main 3-column body ── -->
+            <div class="sdr-body">
+
+                <!-- Col 1: Spectrum + Waterfall -->
+                <div class="card sdr-viz-card">
+                    <div class="lbl" style="padding:10px 12px 4px">Spectrum</div>
+                    <canvas id="sdrSpectrum" width="480" height="110"
+                            style="width:100%;display:block;background:rgba(0,0,0,.4);"></canvas>
+
+                    <div class="lbl" style="padding:8px 12px 4px">Waterfall</div>
+                    <canvas id="sdrWaterfall" width="480" height="80"
+                            style="width:100%;display:block;background:#000;"></canvas>
                 </div>
-            </div>
 
-            <div class="card cp">
-                <div class="lbl" style="margin-bottom:9px">Presets</div>
-                <div style="display:flex;flex-direction:column;gap:5px">
-                    <button class="cb" onclick="SdrTab.setFreq(88.0)"   style="flex-direction:row;align-items:center;gap:8px;padding:8px 10px"><span style="color:var(--text3);font-size:10px;min-width:55px;font-family:DM Mono,monospace">88.0</span>FM Radio</button>
-                    <button class="cb" onclick="SdrTab.setFreq(121.5)"  style="flex-direction:row;align-items:center;gap:8px;padding:8px 10px"><span style="color:var(--accent);font-size:10px;min-width:55px;font-family:DM Mono,monospace">121.5</span>Aviation Guard</button>
-                    <button class="cb" onclick="SdrTab.setFreq(156.8)"  style="flex-direction:row;align-items:center;gap:8px;padding:8px 10px"><span style="color:var(--teal);font-size:10px;min-width:55px;font-family:DM Mono,monospace">156.8</span>Marine Ch 16</button>
-                    <button class="cb" onclick="SdrTab.setFreq(433.92)" style="flex-direction:row;align-items:center;gap:8px;padding:8px 10px"><span style="color:var(--text3);font-size:10px;min-width:55px;font-family:DM Mono,monospace">433.9</span>ISM / Keyfobs</button>
+                <!-- Col 2: Controls -->
+                <div class="card cp sdr-controls-card">
+
+                    <div class="lbl" style="margin-bottom:8px">Modulation</div>
+                    <div class="sdr-mode-grid">
+                        <button class="sdr-mode-btn active" data-mode="wfm" onclick="SdrTab.setMode('wfm')">
+                            <span class="mode-name">Wide FM</span>
+                            <span class="mode-sub">88–108 MHz</span>
+                        </button>
+                        <button class="sdr-mode-btn" data-mode="am" onclick="SdrTab.setMode('am')">
+                            <span class="mode-name">AM</span>
+                            <span class="mode-sub">Airband</span>
+                        </button>
+                        <button class="sdr-mode-btn" data-mode="nfm" onclick="SdrTab.setMode('nfm')">
+                            <span class="mode-name">Narrow FM</span>
+                            <span class="mode-sub">Marine VHF</span>
+                        </button>
+                    </div>
+
+                    <div class="divider" style="margin:14px 0"></div>
+
+                    <div class="lbl">
+                        Squelch &nbsp;
+                        <span id="sdrSqVal"
+                              style="color:var(--text2);font-family:'DM Mono',monospace;font-weight:500">
+                    0 dB
+                </span>
+                    </div>
+                    <input id="sdrSqSlider" type="range" min="0" max="50" step="1" value="0"
+                           oninput="SdrTab.setSquelch(this.value)"
+                           class="sdr-sq-slider" />
+                    <div class="sdr-sq-labels">
+                        <span>Open</span><span>Tight</span>
+                    </div>
+
+                    <div class="divider" style="margin:14px 0"></div>
+
+                    <div class="lbl" style="margin-bottom:6px">Device</div>
+                    <div class="sdr-device-info">
+                        RTL2832U / R820T2<br>
+                        240 ksps · Auto gain<br>
+                        Audio → 3.5 mm jack
+                    </div>
+
                 </div>
-            </div>
 
-            <div class="card cp">
-                <div class="lbl" style="margin-bottom:7px">Device</div>
-                <div style="font-size:11px;color:var(--text3);line-height:2">RTL2832U / R820T2<br>Sample: 2.048 MSPS<br>Gain: Auto<br>PPM: 0</div>
-            </div>
+                <!-- Col 3: Preset panel -->
+                <div class="card sdr-preset-card">
 
-        </div><!-- /sdr -->
+                    <!-- Search bar -->
+                    <div class="sdr-search-bar">
+                        <span class="sdr-search-icon">⌕</span>
+                        <input id="sdrSearch" type="text" placeholder="Search presets…"
+                               class="sdr-search-input" autocomplete="off" />
+                        <button class="sdr-search-clear" onclick="SdrTab.clearSearch()">✕</button>
+                    </div>
+
+                    <!-- Scrollable list -->
+                    <div id="sdrPresetList" class="sdr-preset-list">
+                        <div class="preset-empty">Loading…</div>
+                    </div>
+
+                    <!-- Save current as preset -->
+                    <div class="sdr-preset-footer">
+                        <button class="sdr-save-btn" onclick="SdrTab.openAddSheet()">
+                            ＋ Save Current as Preset
+                        </button>
+                    </div>
+
+                </div>
+
+            </div><!-- /sdr-body -->
+
+        </div><!-- /page-sdr -->
 
     </div><!-- /content -->
+
+    <!-- Sits outside #page-sdr so it layers over the whole app. -->
+    <div id="sdrSheet" class="sdr-sheet-backdrop">
+        <div class="sdr-sheet">
+
+            <div class="sdr-sheet-handle"></div>
+
+            <div class="sdr-sheet-header">
+                <div>
+                    <div style="font-size:15px;font-weight:600;color:var(--text)">Save Preset</div>
+                    <div style="font-size:11px;color:var(--text3);margin-top:2px" id="sdrSheetFreq">88.000 MHz · WFM</div>
+                </div>
+                <button class="sdr-sheet-close" onclick="SdrTab.closeSheet()">✕</button>
+            </div>
+
+            <!-- Band group quick-pick -->
+            <div class="lbl" style="margin-bottom:8px">Group</div>
+            <div class="sdr-sheet-bands">
+                <button class="sheet-band-btn active" data-band="fm"      onclick="_sheetBand(this)">FM Broadcast</button>
+                <button class="sheet-band-btn"        data-band="airband" onclick="_sheetBand(this)">Airband</button>
+                <button class="sheet-band-btn"        data-band="marine"  onclick="_sheetBand(this)">Marine VHF</button>
+                <button class="sheet-band-btn"        data-band="custom"  onclick="_sheetBand(this)">Custom</button>
+            </div>
+
+            <!-- Name input -->
+            <div class="lbl" style="margin:14px 0 6px">Name</div>
+            <div class="sdr-sheet-name-row">
+                <input id="sdrSheetName" type="text" class="sdr-sheet-input"
+                       placeholder="e.g. Rotterdam Marina Ch16" maxlength="48" />
+            </div>
+            <div style="font-size:10px;color:var(--text3);margin-top:4px">
+                Preview: <span id="sdrSheetPreview" style="color:var(--text2)">FM 88.000</span>
+            </div>
+
+            <!-- Save -->
+            <button class="sdr-sheet-save" onclick="SdrTab.savePreset()">
+                Save Preset
+            </button>
+
+        </div>
+    </div>
+
+    <script>
+        // Tiny inline helper — band picker inside the sheet
+        function _sheetBand(btn) {
+            document.querySelectorAll('.sheet-band-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+    </script>
 </div><!-- /app -->
 
 <script type="module" src="/static/js/main.js"></script>
