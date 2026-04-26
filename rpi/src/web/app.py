@@ -1,4 +1,6 @@
 from flask import Flask, jsonify, render_template, request
+import hashlib
+import json
 import time
 from src.car_state import SharedState
 from src.bus.message import MessageNode
@@ -16,11 +18,13 @@ def init_app(state: SharedState):
 
 # ── Pages ─────────────────────────────────────────────────────────────────────
 
+
 @app.route('/')
 def dashboard():
     return render_template('dashboard.html')
 
 # ── Data API ──────────────────────────────────────────────────────────────────
+
 
 @app.route('/api/esp32/data', methods=['POST'])
 def api_esp32_data():
@@ -49,14 +53,24 @@ def api_esp32_data():
     )
     return jsonify({'ok': True})
 
+
 @app.route('/api/state')
 def api_state():
     snap = _state.snapshot()
     if snap.get('avg_btn_event'):
         _state.update(avg_btn_event=False)
-    # Inject ESP32 connection status — stale after 1 second
     snap['esp32_connected'] = (time.time() - _last_esp32_update) < 1.0
-    return jsonify(snap)
+
+    body = json.dumps(snap, separators=(',', ':'), sort_keys=True)
+    etag = hashlib.md5(body.encode()).hexdigest()[:8]
+
+    if request.headers.get('If-None-Match') == etag:
+        return '', 304
+
+    resp = app.response_class(body, mimetype='application/json')
+    resp.headers['ETag'] = etag
+    return resp
+
 
 @app.route('/api/command', methods=['POST'])
 def api_command():
