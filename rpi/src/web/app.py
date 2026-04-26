@@ -1,4 +1,5 @@
 from flask import Flask, jsonify, render_template, request
+import time
 from src.car_state import SharedState
 from src.bus.message import MessageNode
 from src.bus.i2c_master import I2CMaster
@@ -6,84 +7,61 @@ from src.bus.i2c_master import I2CMaster
 app = Flask(__name__, static_folder='./static', template_folder='./templates')
 
 _state: SharedState = None
-_i2c: I2CMaster = None
+_last_esp32_update: float = 0
 
 
-def init_app(state: SharedState, i2c: I2CMaster = None):
-    """
-    Wire up shared state (and optionally the I2C master for command forwarding).
-    Called from main.py before app.run().
-    """
-    global _state, _i2c
+def init_app(state: SharedState):
+    global _state
     _state = state
-    _i2c = i2c
 
-
-# ── Pages ──────────────────────────────────────────────────────────────────────
+# ── Pages ─────────────────────────────────────────────────────────────────────
 
 @app.route('/')
 def dashboard():
     return render_template('dashboard.html')
 
+# ── Data API ──────────────────────────────────────────────────────────────────
 
-# ── Data API ───────────────────────────────────────────────────────────────────
+@app.route('/api/esp32/data', methods=['POST'])
+def api_esp32_data():
+    global _last_esp32_update
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({'error': 'no data'}), 400
+    _last_esp32_update = time.time()
+    _state.update(
+        rpm=data.get('rpm', 0),
+        water_temp_c=data.get('water_temp_c', 0),
+        oil_pressure=data.get('oil_pressure', 0.0),
+        lights_on=data.get('lights_on', False),
+        beam_on=data.get('beam_on', False),
+        lights_up=data.get('lights_up', False),
+        parking_brake_on=data.get('parking_brake_on', False),
+        gps_valid=data.get('gps_valid', False),
+        gps_lat=data.get('gps_lat', 0.0),
+        gps_lon=data.get('gps_lon', 0.0),
+        gps_speed=data.get('gps_speed', 0.0),
+        gps_alt=data.get('gps_alt', 0.0),
+        gps_sats=data.get('gps_sats', 0),
+        imu_x=data.get('imu_x', 0.0),
+        imu_y=data.get('imu_y', 0.0),
+        imu_z=data.get('imu_z', 0.0),
+    )
+    return jsonify({'ok': True})
 
 @app.route('/api/state')
 def api_state():
     snap = _state.snapshot()
     if snap.get('avg_btn_event'):
         _state.update(avg_btn_event=False)
+    # Inject ESP32 connection status — stale after 1 second
+    snap['esp32_connected'] = (time.time() - _last_esp32_update) < 1.0
     return jsonify(snap)
-
 
 @app.route('/api/command', methods=['POST'])
 def api_command():
-    """
-    Forward a relay command string to the sensor Arduino over I2C.
-    Body: { "command": "LIGHTS_ON" }
-    """
     data = request.get_json(silent=True)
     if not data or 'command' not in data:
         return jsonify({'error': 'missing command'}), 400
-
-    command = data['command']
-
-    if _i2c is None:
-        # No I2C master available (e.g. running in mock/dev mode)
-        print(f'[api] command (no-op, no I2C): {command}')
-        return jsonify({'ok': True, 'note': 'no_i2c'})
-
-    try:
-        from src.bus.message import Message, MessageType, MessageNode
-        msg = Message(
-            type=MessageType.TYPE_COMMAND,
-            source=MessageNode.NODE_ESP32,
-            destination=MessageNode.NODE_SENSOR_ARDUINO,
-            payload=command,
-            length=len(command),
-        )
-        _i2c.send(MessageNode.NODE_SENSOR_ARDUINO, msg)
-        return jsonify({'ok': True})
-    except Exception as e:
-        print(f'[api] command failed: {e}')
-        return jsonify({'error': str(e)}), 500
-
-
-# ── EFI (stub — implement when rusEFI serial is wired up) ──────────────────────
-
-@app.route('/api/efi/connect', methods=['POST'])
-def api_efi_connect():
-    return jsonify({'error': 'not_implemented'}), 501
-
-
-@app.route('/api/efi/state')
-def api_efi_state():
-    return jsonify({'error': 'not_implemented'}), 501
-
-
-# ── SDR (stub — implement when pyrtlsdr is wired up) ──────────────────────────
-
-@app.route('/api/sdr/tune')
-def api_sdr_tune():
-    freq = request.args.get('freq', type=float)
-    return jsonify({'error': 'not_implemented', 'requested_freq': freq}), 501
+    print(f'[api] command received: {data["command"]}')
+    return jsonify({'ok': True})

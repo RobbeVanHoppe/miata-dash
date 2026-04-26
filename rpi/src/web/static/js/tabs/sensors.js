@@ -34,6 +34,12 @@ export function init() {
  * @param {object} state  Full CarState dict from /api/state
  */
 export function update(state) {
+    if (!state.esp32_connected) {
+        setText('rpm-big', '--');
+        setText('water-val', '--');
+        setText('oil-val', '--');
+        return;  // don't render stale values
+    }
     _updateRpm(state.rpm ?? 0);
     _updateCoolant(state.water_temp_c ?? 0);
     _updateOil(state.oil_pressure ?? 0, state.rpm ?? 0);

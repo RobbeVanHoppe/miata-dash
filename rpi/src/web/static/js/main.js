@@ -55,13 +55,21 @@ document.addEventListener('DOMContentLoaded', () => {
         if (label) label.textContent = ok ? 'Online' : 'Fault';
     });
 
-    // GPS status in top bar
+    // ESP32 status in top bar
     onStateUpdate(state => {
-        const ok  = state.gps_valid;
-        const dot = document.getElementById('gpsDot');
-        const lbl = document.getElementById('gpsLbl');
-        if (dot) dot.className   = 'dot' + (ok ? '' : ' err');
-        if (lbl) lbl.textContent = ok ? `${state.gps_sats} Sats` : 'No Fix';
+        // GPS status
+        const gpsOk = state.gps_valid;
+        const gpsDot = document.getElementById('gpsDot');
+        const gpsLbl = document.getElementById('gpsLbl');
+        if (gpsDot) gpsDot.className = 'dot' + (gpsOk ? '' : ' err');
+        if (gpsLbl) gpsLbl.textContent = gpsOk ? `${state.gps_sats} Sats` : 'No Fix';
+
+        // ESP32 connection status
+        const espOk = state.esp32_connected;
+        const connDot = document.getElementById('connDot');
+        const connLbl = document.getElementById('connLbl');
+        if (connDot) connDot.className = 'dot' + (espOk ? '' : ' err');
+        if (connLbl) connLbl.textContent = espOk ? 'Online' : 'ESP32 Lost';
     });
 
     // Route every state update to the active tab AND sensors (always updated)
