@@ -1,9 +1,36 @@
+from flask import Flask, jsonify, render_template, request
+from src.car_state import SharedState
+from src.bus.message import MessageNode
+from src.bus.i2c_master import I2CMaster
+
+app = Flask(__name__, static_folder='./static', template_folder='./templates')
+
+_state: SharedState = None
+
+def init_app(state: SharedState):
+    global _state
+    _state = state
+
+# ── Pages ─────────────────────────────────────────────────────────────────────
+
+@app.route('/')
+def dashboard():
+    return render_template('dashboard.html')
+
+# ── Data API ──────────────────────────────────────────────────────────────────
+
+@app.route('/api/state')
+def api_state():
+    snap = _state.snapshot()
+    if snap.get('avg_btn_event'):
+        _state.update(avg_btn_event=False)
+    return jsonify(snap)
+
 @app.route('/api/esp32/data', methods=['POST'])
 def api_esp32_data():
     data = request.get_json(silent=True)
     if not data:
         return jsonify({'error': 'no data'}), 400
-
     _state.update(
         rpm=data.get('rpm', 0),
         water_temp_c=data.get('water_temp_c', 0),
@@ -22,4 +49,12 @@ def api_esp32_data():
         imu_y=data.get('imu_y', 0.0),
         imu_z=data.get('imu_z', 0.0),
     )
+    return jsonify({'ok': True})
+
+@app.route('/api/command', methods=['POST'])
+def api_command():
+    data = request.get_json(silent=True)
+    if not data or 'command' not in data:
+        return jsonify({'error': 'missing command'}), 400
+    print(f'[api] command received: {data["command"]}')
     return jsonify({'ok': True})

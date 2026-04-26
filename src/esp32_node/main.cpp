@@ -3,7 +3,6 @@
 #include <HTTPClient.h>
 
 const char* SSID     = "miotspot";
-const char* PASSWORD = "miata";
 const char* RPI_URL  = "http://192.168.4.1:5000/api/esp32/data";
 
 void setup() {
@@ -11,7 +10,7 @@ void setup() {
     delay(500);
     Serial.println("\n=== ESP32 Miata Node ===");
 
-    WiFi.begin(SSID, PASSWORD);
+    WiFi.begin(SSID);
     Serial.print("Connecting to miotspot");
     while (WiFi.status() != WL_CONNECTED) {
         delay(500);
