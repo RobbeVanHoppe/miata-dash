@@ -5,3 +5,4 @@ flask-sock==0.7.0
 pyrtlsdr==0.3.0
 numpy==1.26.4
 sounddevice==0.5.1
+waitress==3.0.1

@@ -1,3 +1,4 @@
+from waitress import serve
 from src.car_state import SharedState
 from src.web.app import app, init_app
 from src.web.sdr_routes import sdr_bp, init_sdr
@@ -12,7 +13,7 @@ def main():
 
     print("Miata Dash - Online")
     print("Dashboard: http://192.168.4.1:5000")
-    app.run(host="0.0.0.0", port=5000, use_reloader=False)
+    serve(app, host="0.0.0.0", port=5000, threads=4)
 
 
 if __name__ == "__main__":

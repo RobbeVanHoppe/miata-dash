@@ -5,7 +5,7 @@
  * Add new endpoints in one place, mock them in one place.
  */
 
-const POLL_INTERVAL_MS = 100;
+const POLL_INTERVAL_MS = 250;
 
 /** Registered update callbacks, one per tab */
 const _listeners = [];
@@ -13,6 +13,7 @@ const _listeners = [];
 let _lastState = null;
 let _pollTimer = null;
 let _consecutiveErrors = 0;
+let _lastEtag = null;
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
@@ -73,8 +74,13 @@ function _setConnected(ok) {
 
 async function _poll() {
     try {
-        const res = await fetch('/api/state');
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const headers = {};
+        if (_lastEtag) headers['If-None-Match'] = _lastEtag;
+
+        const res = await fetch('/api/state', { headers });
+        if (res.status === 304) return;  // nothing changed, skip render entirely
+
+        _lastEtag = res.headers.get('ETag');
         const state = await res.json();
         _lastState = state;
         _consecutiveErrors = 0;
@@ -82,8 +88,6 @@ async function _poll() {
         _listeners.forEach(fn => fn(state));
     } catch (e) {
         _consecutiveErrors++;
-        if (_consecutiveErrors >= 3) {
-            _setConnected(false);
-        }
+        if (_consecutiveErrors >= 3) _setConnected(false);
     }
 }
