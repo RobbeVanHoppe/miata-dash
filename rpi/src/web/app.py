@@ -1,4 +1,5 @@
 from flask import Flask, jsonify, render_template, request
+import time
 from src.car_state import SharedState
 from src.bus.message import MessageNode
 from src.bus.i2c_master import I2CMaster
@@ -6,6 +7,8 @@ from src.bus.i2c_master import I2CMaster
 app = Flask(__name__, static_folder='./static', template_folder='./templates')
 
 _state: SharedState = None
+_last_esp32_update: float = 0
+
 
 def init_app(state: SharedState):
     global _state
@@ -19,18 +22,13 @@ def dashboard():
 
 # ── Data API ──────────────────────────────────────────────────────────────────
 
-@app.route('/api/state')
-def api_state():
-    snap = _state.snapshot()
-    if snap.get('avg_btn_event'):
-        _state.update(avg_btn_event=False)
-    return jsonify(snap)
-
 @app.route('/api/esp32/data', methods=['POST'])
 def api_esp32_data():
+    global _last_esp32_update
     data = request.get_json(silent=True)
     if not data:
         return jsonify({'error': 'no data'}), 400
+    _last_esp32_update = time.time()
     _state.update(
         rpm=data.get('rpm', 0),
         water_temp_c=data.get('water_temp_c', 0),
@@ -50,6 +48,15 @@ def api_esp32_data():
         imu_z=data.get('imu_z', 0.0),
     )
     return jsonify({'ok': True})
+
+@app.route('/api/state')
+def api_state():
+    snap = _state.snapshot()
+    if snap.get('avg_btn_event'):
+        _state.update(avg_btn_event=False)
+    # Inject ESP32 connection status — stale after 1 second
+    snap['esp32_connected'] = (time.time() - _last_esp32_update) < 1.0
+    return jsonify(snap)
 
 @app.route('/api/command', methods=['POST'])
 def api_command():
